@@ -1,8 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.auth_routes import router as auth_router
+from app.api.history_routes import router as history_router
 from app.api.routes import router
 from app.config import settings
+from app.db import init_db
 
 app = FastAPI(
     title=settings.app_name,
@@ -19,7 +22,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.on_event("startup")
+def on_startup():
+    init_db()
+
+
 app.include_router(router, prefix="/api")
+app.include_router(auth_router, prefix="/api")
+app.include_router(history_router, prefix="/api")
 
 
 @app.get("/")
