@@ -3,6 +3,20 @@ function ConfidenceBadge({ level }) {
   return <span className={`badge ${cls}`}>{level} confidence</span>
 }
 
+/** Renders a data_source string as a clickable citation when a source_url is present. */
+function SourceLine({ label, url }) {
+  return (
+    <p className="confidence-note">
+      Source:{' '}
+      {url ? (
+        <a href={url} target="_blank" rel="noopener noreferrer">{label}</a>
+      ) : (
+        label
+      )}
+    </p>
+  )
+}
+
 export default function FeasibilityCard({ report }) {
   const { market_reach, opportunity_analysis, swot, threats, competitor_mapping, pricing } = report
 
@@ -35,7 +49,7 @@ export default function FeasibilityCard({ report }) {
       <ul className="list-clean">
         {market_reach.primary_distribution_channels.map((c) => <li key={c}>{c}</li>)}
       </ul>
-      <p className="confidence-note">Source: {market_reach.data_source}</p>
+      <SourceLine label={market_reach.data_source} url={market_reach.source_url} />
 
       <h3 style={{ marginTop: 24 }}>Opportunity analysis</h3>
       <ul className="list-clean">
@@ -51,7 +65,7 @@ export default function FeasibilityCard({ report }) {
           <> — nearest estimated at {competitor_mapping.nearest_competitor_distance_km} km.</>
         )}
       </p>
-      <p className="confidence-note">Source: {competitor_mapping.data_source}</p>
+      <SourceLine label={competitor_mapping.data_source} url={competitor_mapping.source_url} />
 
       <h3 style={{ marginTop: 24 }}>SWOT analysis</h3>
       <div className="swot-grid">
@@ -88,7 +102,7 @@ export default function FeasibilityCard({ report }) {
         Predicted local market value: ₹{pricing.predicted_local_market_value} {pricing.unit}.
       </p>
       <p className="field-hint">{pricing.pricing_rationale}</p>
-      <p className="confidence-note">Source: {pricing.data_source}</p>
+      <SourceLine label={pricing.data_source} url={pricing.source_url} />
 
       <h3 style={{ marginTop: 24 }}>Actionable next steps</h3>
       <ul className="list-clean">
