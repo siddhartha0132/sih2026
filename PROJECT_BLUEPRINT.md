@@ -20,12 +20,19 @@ Government schemes give rural entrepreneurs concessional credit for
 income-generating activities. The beneficiary contributes **10% margin
 money**; the Channelizing Agency (CA/SCA) lends the remaining **90%**.
 
-Two scheme tiers:
+Two scheme tiers **as literally worded in the PS text**:
 
 | Scheme | Project cost range | Max loan | Interest | Tenure | Moratorium |
 |---|---|---|---|---|---|
 | Micro Finance Scheme | up to ₹1.40 Lakh | ₹1.25 Lakh | 6.5% p.a. | 3 years | 3 months |
 | Term Loan Scheme | ₹1.40 Lakh – ₹50.00 Lakh | ₹45 Lakh | 8% p.a. | 7 years | 6 months |
+
+> **This "Term Loan Scheme" no longer exists at NSFDC and this repo does NOT
+> implement it as written above.** Verified live against nsfdc.nic.in on
+> 2026-09-03: NSFDC restructured it on 01.10.2023 into two real, currently
+> active schemes. See §3 below and `backend/app/services/financial_calculator.py`
+> for what's actually implemented and why — this is a deliberate, documented
+> deviation from the literal PS text in favor of scheme reality, not a bug.
 
 ### Challenge
 First-time rural entrepreneurs pick businesses based on anecdote, not data,
@@ -98,15 +105,31 @@ is exactly what is real vs. simulated, so nothing is overstated in a demo.
 ### ✅ Fully real / deterministic (no external dependency, no mocking)
 - **Module 2, the entire financial engine** (`backend/app/services/financial_calculator.py`):
   - Project cost & loan amount formulas exactly as specified in the PS
-  - Scheme auto-selection (Logic A / Logic B), including a warning branch for
-    project cost > ₹50L (out of scope for either scheme — the PS doesn't say
-    what to do here, so this is handled explicitly and flagged, not silently
-    dropped)
+  - Scheme auto-selection across **three** real, currently-live NSFDC schemes
+    (not the PS's literal two — see the callout above and the big comment at
+    the top of `financial_calculator.py` for the full "why", with citations):
+    | Scheme | Project cost | Max loan | Interest | Tenure | Moratorium | Verified against |
+    |---|---|---|---|---|---|---|
+    | Micro Finance | ≤ ₹1.40L | ₹1.25L | 6.5% | 3 yrs | 3 mo | [nsfdc.nic.in/en/micro-credit-finance](https://nsfdc.nic.in/en/micro-credit-finance) |
+    | SUVIDHA | ₹1.40L–₹10L | ₹9L | 8% | 5 yrs | 6 mo | [nsfdc.nic.in/en/suvidha-loan](https://nsfdc.nic.in/en/suvidha-loan) |
+    | UTKARSH | ₹10L–₹50L | ₹45L | 9% | 7 yrs | 6 mo | [nsfdc.nic.in/en/utkarsh-loan](https://nsfdc.nic.in/en/utkarsh-loan) |
+    Includes a warning branch for project cost > ₹50L (out of scope for all
+    three — the PS doesn't say what to do here, so this is handled explicitly
+    and flagged, not silently dropped). Every `FinancialPlan` response carries
+    `official_source_url` + `terms_verified_on` so the UI can render a live,
+    clickable citation next to the numbers — this is the single strongest
+    "we did real diligence" moment in the demo; lead with it if a judge asks
+    "how do you know these rates are right?"
   - Full quarterly amortization schedule, moratorium-aware (interest
     capitalizes during the moratorium, then standard reducing-balance annuity
     afterward — this specific mechanic is an **assumption**, documented
-    in-code, since the PS doesn't specify EMI mechanics exactly)
+    in-code, since none of the NSFDC pages specify EMI mechanics exactly)
   - This module has zero external dependencies and is fully unit-testable today.
+- **Citation links throughout Module 1** — `MarketReach`, `CompetitorMapping`,
+  and `PricingRecommendation` all now carry a `source_url` pointing at the
+  relevant data.gov.in catalog page (Census, Udyam/MSME, Agmarknet), rendered
+  as a clickable "Source:" link in `FeasibilityCard.jsx` instead of a plain
+  string.
 - **FastAPI backend** (`backend/app/main.py`, `api/routes.py`, `schemas.py`):
   real, runs today, `/api/advisory` returns both modules in one response,
   `/docs` gives interactive Swagger UI for free.
@@ -129,16 +152,42 @@ is exactly what is real vs. simulated, so nothing is overstated in a demo.
   not an LLM call. It's written as an isolated function specifically so it
   can be swapped for a real Claude API call with a one-function change.
 
+### ✅ Newly added — Personal-use login + saved history (real, not mocked)
+- Two entry modes, chosen on the landing page before anything else:
+  - **Open use** (`/advisor/open`) — no login, nothing saved, stateless exactly
+    like the original single-mode app. For "anyone can try it" demos.
+  - **Personal use** (`/advisor/personal`, behind `ProtectedRoute`) — requires
+    a real login (`backend/app/auth.py`: bcrypt-hashed passwords, signed JWT,
+    SQLite via SQLAlchemy in `backend/app/db.py` + `models_db.py`). Every
+    advisory run made while logged in is auto-saved server-side
+    (`api/routes.py::get_advisory`, via the optional-auth dependency) as a
+    `HistoryEntry` row — no separate "save" click needed.
+  - `AdvisoryRequest.business_name` (optional) lets the same venture's
+    repeated check-ins group together in `/history` as one timeline —
+    this is the field to use for the "1 hour in → 3 hours later → 5 hours
+    later, now with 15 clients" growth-over-time demo: create multiple real
+    history entries under the same `business_name`, each with updated inputs,
+    and the engine computes real numbers at each stage. Not yet built: the
+    actual scripted demo data/walkthrough itself — see next-task checklist.
+  - New endpoints: `POST /api/auth/signup`, `POST /api/auth/login`,
+    `GET /api/auth/me`, `GET /api/history` (optional `?business_name=`
+    filter), `GET /api/history/{id}`.
+  - `gramvyapaar.db` (SQLite file, gitignored) is created automatically on
+    backend startup — nothing to provision manually.
+
 ### ❌ Not yet built
 - Voice input / Bhashini integration
-- Multilingual UI (only English strings exist right now; `language` field
-  is accepted by the API but unused)
-- Authentication / user accounts / saved reports
-- PDF export of the report ("Download / Share" from the pitch deck)
+- Multilingual UI + translated AI narrative (only English strings exist
+  right now; `language` field is accepted by the API but unused) —
+  citation links themselves are done, see §3
+- The scripted "growth over time" demo walkthrough itself (the login/history/
+  business_name plumbing above is ready for it, but the actual pre-built
+  multi-checkpoint mock business scenario for personal-use mode isn't)
+- The "describe your idea → suggested category/investment/scheme" reverse-flow
 - CSC/field-officer assisted mode UI
-- Persistent database (currently fully stateless — every request is computed
-  fresh, nothing is stored)
-- Real integrations for Census, OSM, Agmarknet (see mocked section above)
+- Real integrations for OSM (competitor mapping beyond the static MSME file)
+  and data.gov.in live Census (currently static Rajasthan-only Kaggle CSVs —
+  see market_data.py; other states fall back to generic estimated defaults)
 
 ---
 
@@ -237,7 +286,8 @@ directly closes a gap a judge is likely to probe:
 - The moratorium-interest-capitalization assumption in the EMI calculator is
   one reasonable interpretation, not dictated by the PS — flag this
   explicitly if asked "how did you compute the EMI?"
-- No authentication/persistence yet — every request is stateless.
+- Open-use requests are still fully stateless (by design). Personal-use now
+  has real authentication + persistence (bcrypt + JWT + SQLite) — see §3.
 - English-only UI right now; multilingual is a planned next step, not yet built.
 
 ## 8. If something breaks — where to look first
@@ -275,10 +325,16 @@ gramvyapaar-ai/
 │   ├── .env.example
 │   ├── Dockerfile
 │   └── app/
-│       ├── main.py             <- FastAPI app + CORS
-│       ├── config.py           <- env-based settings
+│       ├── main.py             <- FastAPI app + CORS, wires auth/history routers
+│       ├── config.py           <- env-based settings (incl. jwt_secret_key)
+│       ├── db.py                <- SQLAlchemy engine/session (SQLite for the demo)
+│       ├── models_db.py         <- User + HistoryEntry ORM models
+│       ├── auth.py              <- bcrypt hashing, JWT issue/verify, optional-auth dependency
 │       ├── schemas.py          <- ALL request/response models (read this first)
-│       ├── api/routes.py       <- /api/advisory, /api/financial-plan, /api/health
+│       ├── api/
+│       │   ├── routes.py            <- /api/advisory, /api/financial-plan, /api/health
+│       │   ├── auth_routes.py       <- /api/auth/signup, /login, /me
+│       │   └── history_routes.py    <- /api/history, /api/history/{id}
 │       └── services/
 │           ├── financial_calculator.py   <- Module 2, fully real
 │           ├── feasibility_engine.py     <- Module 1 orchestration + scoring
@@ -287,19 +343,40 @@ gramvyapaar-ai/
     ├── package.json / vite.config.js / index.html
     ├── Dockerfile
     └── src/
-        ├── main.jsx / App.jsx
+        ├── main.jsx / App.jsx     <- routes + Header, wraps app in AuthProvider
         ├── index.css            <- design tokens (palette, type, spacing)
-        ├── api/client.js        <- fetch wrapper
-        ├── pages/Home.jsx
-        ├── pages/Advisor.jsx    <- form + report orchestration
+        ├── api/client.js        <- fetch wrapper (advisory + auth + history calls)
+        ├── context/AuthContext.jsx <- login/signup/logout, token+user in localStorage
+        ├── pages/
+        │   ├── Landing.jsx        <- Personal vs Open use choice (replaces Home.jsx)
+        │   ├── Login.jsx          <- login/signup form
+        │   ├── Advisor.jsx        <- form + report orchestration, mode="open"|"personal"
+        │   ├── History.jsx        <- saved plans grouped by business_name
+        │   └── HistoryDetail.jsx  <- replay one saved report via ReportView
         └── components/
             ├── InputForm.jsx
+            ├── ProtectedRoute.jsx <- redirects to /login when not authenticated
+            ├── ReportView.jsx     <- shared FeasibilityCard+FinancialPlanCard+PDF renderer
             ├── FeasibilityCard.jsx
             └── FinancialPlanCard.jsx
 ```
 
 ## 10. Immediate next-task checklist (hand this straight to an AI coding assistant)
 
+- [ ] Build the scripted growth-over-time demo scenario for personal-use
+      mode: pre-create 3 history entries for one mock business (same
+      `business_name`) with realistic escalating inputs, so the demo can
+      show "hour 1 plan → 3 hours: 2 clients → 5 hours: 15 clients, expand
+      radius?" as real saved/recalculated reports, not a fake timer
+- [x] Turn `data_source` fields into real clickable citation links — done,
+      see §3. Still open: link each district's specific Agmarknet mandi
+      record rather than only the general data.gov.in catalog page, if time
+      allows before the demo.
+- [ ] Add a language selector + translate the narrative/UI (Hindi first),
+      via Bhashini or an LLM translation call — keep all numbers/formulas
+      untouched, translate only the surrounding text
+- [ ] Add the "describe your business idea" reverse-flow that suggests a
+      category, investment level, and matching scheme
 - [ ] Add `frontend/.env` support for `VITE_API_BASE` (currently relies on
       Vite's default env handling — verify a `.env` file works end-to-end)
 - [ ] Write unit tests for `financial_calculator.py` (it's pure functions —
