@@ -14,10 +14,12 @@ export default function Landing() {
       <section className="section container">
         <h1>Know your market. Know your loan.<br />Before you borrow a rupee.</h1>
         <p>
-          GramVyapaar AI turns three simple inputs — your village, your available
+          GramVyapaar AI turns a few simple answers — your village, your available
           capital, and your business idea — into a hyper-local feasibility report
-          and an exact financial roadmap: project cost, loan eligibility, scheme
-          match, and repayment schedule.
+          and an exact financial roadmap: project cost, loan eligibility, every
+          scheme you qualify for, and a real repayment schedule. Answers come back
+          in your own language, with a simple step-by-step flowchart instead of
+          confusing graphs.
         </p>
       </section>
 
@@ -64,8 +66,8 @@ export default function Landing() {
             <div className="stat-label">Concessional loan from the Channelizing Agency</div>
           </div>
           <div className="stat">
-            <div className="stat-value">3 schemes</div>
-            <div className="stat-label">Micro Finance (≤₹1.4L), SUVIDHA (≤₹10L) or UTKARSH (≤₹50L), auto-selected</div>
+            <div className="stat-value">6 schemes checked</div>
+            <div className="stat-label">NSFDC's 3 tiers, PMEGP, MUDRA &amp; Stand-Up India — every real option, not just one</div>
           </div>
         </div>
       </section>
