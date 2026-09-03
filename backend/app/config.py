@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     data_gov_in_api_key: str = ""
     agmarknet_api_key: str = ""
     frontend_origin: str = "http://localhost:5173"
+    jwt_secret_key: str = "dev-only-insecure-secret-change-in-.env"
 
     class Config:
         env_file = ".env"
