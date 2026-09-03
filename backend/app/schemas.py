@@ -25,7 +25,8 @@ class BusinessCategory(str, Enum):
 
 class SchemeName(str, Enum):
     micro_finance = "Micro Finance Scheme"
-    term_loan = "Term Loan Scheme"
+    suvidha = "SUVIDHA Loan Scheme"
+    utkarsh = "UTKARSH Loan Scheme"
     not_eligible = "Not Eligible (Project cost exceeds Rs. 50 Lakh)"
 
 
@@ -58,6 +59,14 @@ class AdvisoryRequest(BaseModel):
     applicant_age: Optional[int] = None
     is_first_time_entrepreneur: Optional[bool] = True
     language: str = Field("en", description="ISO code for report language: en, hi, etc.")
+
+    business_name: Optional[str] = Field(
+        None,
+        description="Free-text label for this venture, e.g. 'Meena's Dairy'. "
+        "Optional for a one-off (open-use) run. For personal-use, reusing the "
+        "same business_name across multiple runs groups them as one ongoing "
+        "business's timeline in the saved history.",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -94,6 +103,15 @@ class FinancialPlan(BaseModel):
     scheme_explanation: str  # "Why this scheme?" — plain-language justification
     warnings: List[str] = []  # e.g. project cost exceeds Rs 50L ceiling
 
+    official_source_url: str = Field(
+        "", description="Direct link to the official NSFDC page these terms were "
+        "verified against — render this as a clickable citation in the UI."
+    )
+    terms_verified_on: str = Field(
+        "", description="Date (YYYY-MM-DD) these scheme terms were last checked "
+        "live against the official source."
+    )
+
 
 # ---------------------------------------------------------------------------
 # Module 1 — Hyper-Local Business Feasibility Report
@@ -111,6 +129,7 @@ class CompetitorMapping(BaseModel):
     density_rating: str          # "Low" / "Moderate" / "High"
     nearest_competitor_distance_km: Optional[float] = None
     data_source: str
+    source_url: str = ""
     confidence: ConfidenceLevel
 
 
@@ -121,6 +140,7 @@ class PricingRecommendation(BaseModel):
     predicted_local_market_value: float
     pricing_rationale: str
     data_source: str
+    source_url: str = ""
     confidence: ConfidenceLevel
 
 
@@ -140,6 +160,7 @@ class MarketReach(BaseModel):
     estimated_consumer_base: int
     primary_distribution_channels: List[str]
     data_source: str
+    source_url: str = ""
     confidence: ConfidenceLevel
 
 
@@ -171,3 +192,57 @@ class AdvisoryResponse(BaseModel):
         "It does not constitute an official loan sanction or government approval. "
         "Final eligibility is determined by the concerned Channelizing Agency (CA/SCA)."
     )
+    history_id: Optional[int] = Field(
+        None, description="Set only when this run was auto-saved to a logged-in "
+        "user's personal-use history."
+    )
+
+
+# ---------------------------------------------------------------------------
+# Auth — personal-use login only. Open-use never touches these endpoints.
+# ---------------------------------------------------------------------------
+
+class SignupRequest(BaseModel):
+    name: str = Field(..., min_length=1)
+    phone_or_email: str = Field(..., min_length=3)
+    password: str = Field(..., min_length=6)
+
+
+class LoginRequest(BaseModel):
+    phone_or_email: str
+    password: str
+
+
+class UserOut(BaseModel):
+    id: int
+    name: str
+    phone_or_email: str
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserOut
+
+
+# ---------------------------------------------------------------------------
+# Saved history — personal-use only
+# ---------------------------------------------------------------------------
+
+class HistoryEntrySummary(BaseModel):
+    id: int
+    business_name: Optional[str] = None
+    created_at: str
+    village: str
+    district: str
+    business_category: str
+    business_opportunity_score: int
+    selected_scheme: SchemeName
+
+
+class HistoryEntryDetail(BaseModel):
+    id: int
+    business_name: Optional[str] = None
+    created_at: str
+    request: AdvisoryRequest
+    response: AdvisoryResponse
