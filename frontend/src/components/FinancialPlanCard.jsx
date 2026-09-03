@@ -31,6 +31,15 @@ export default function FinancialPlanCard({ plan }) {
       </div>
 
       <p>{plan.scheme_explanation}</p>
+      {plan.official_source_url && (
+        <p className="confidence-note">
+          Official scheme terms:{' '}
+          <a href={plan.official_source_url} target="_blank" rel="noopener noreferrer">
+            {plan.official_source_url}
+          </a>{' '}
+          (verified {plan.terms_verified_on})
+        </p>
+      )}
 
       {!ineligible && (
         <>
