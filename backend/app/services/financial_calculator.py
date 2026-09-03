@@ -55,6 +55,7 @@ exactly):
 from typing import List, Tuple
 
 from app.schemas import FinancialPlan, RepaymentInstallment, SchemeName
+from app.services import i18n, schemes_catalog
 
 MARGIN_PERCENTAGE = 10.0
 LOAN_PERCENTAGE = 90.0
@@ -233,14 +234,26 @@ def build_repayment_schedule(
     return schedule, round(quarterly_installment, 2), round(total_interest, 2), round(total_repayable, 2)
 
 
-def build_financial_plan(available_margin_capital: float) -> FinancialPlan:
+def build_financial_plan(
+    available_margin_capital: float,
+    business_category: str = "Other",
+    applicant_gender: str | None = None,
+    is_first_time_entrepreneur: bool | None = True,
+    language: str = "en",
+) -> FinancialPlan:
+    lang = i18n.normalize_language(language)
     project_cost, _ = compute_project_cost_and_loan(available_margin_capital)
     scheme, rate, loan_cap, tenure_years, moratorium_months, warnings, source_url = select_scheme(project_cost)
 
     uncapped_loan = project_cost * (LOAN_PERCENTAGE / 100.0)
     loan_amount = min(uncapped_loan, loan_cap) if loan_cap else 0.0
 
+    all_schemes = schemes_catalog.get_all_scheme_options(
+        project_cost, business_category, applicant_gender, is_first_time_entrepreneur
+    )
+
     if scheme == SchemeName.not_eligible:
+        all_schemes = schemes_catalog.mark_recommended(all_schemes, "")
         return FinancialPlan(
             available_margin_capital=available_margin_capital,
             project_cost=round(project_cost, 2),
@@ -253,33 +266,34 @@ def build_financial_plan(available_margin_capital: float) -> FinancialPlan:
             total_interest_payable=0.0,
             total_repayable=0.0,
             repayment_schedule=[],
-            scheme_explanation=(
-                "No scheme could be auto-selected because the calculated project "
-                "cost exceeds the Rs. 50,00,000 ceiling covered by Micro Finance, "
-                "SUVIDHA, and UTKARSH."
-            ),
+            scheme_explanation=i18n.not_eligible_explanation(lang),
             warnings=warnings,
             official_source_url="",
             terms_verified_on=TERMS_VERIFIED_ON,
+            all_schemes=all_schemes,
         )
 
     schedule, quarterly_installment, total_interest, total_repayable = build_repayment_schedule(
         loan_amount, rate, tenure_years, moratorium_months
     )
 
-    band_desc = {
+    band_desc_en = {
         SchemeName.micro_finance: "at or under the Rs. 1,40,000 Micro Finance ceiling",
         SchemeName.suvidha: "between Rs. 1,40,000 and Rs. 10,00,000 (SUVIDHA band)",
         SchemeName.utkarsh: "between Rs. 10,00,000 and Rs. 50,00,000 (UTKARSH band)",
     }[scheme]
+    band_desc_hi = {
+        SchemeName.micro_finance: "Rs. 1,40,000 की माइक्रो फाइनेंस सीमा के अंदर",
+        SchemeName.suvidha: "Rs. 1,40,000 और Rs. 10,00,000 के बीच (SUVIDHA श्रेणी)",
+        SchemeName.utkarsh: "Rs. 10,00,000 और Rs. 50,00,000 के बीच (UTKARSH श्रेणी)",
+    }[scheme]
 
-    explanation = (
-        f"Your project cost of Rs. {project_cost:,.0f} falls {band_desc}, "
-        f"so you qualify for the {scheme.value} at {rate}% p.a. interest, repayable over "
-        f"{tenure_years} years including a {moratorium_months}-month moratorium. "
-        f"Terms verified directly against NSFDC's official scheme page on {TERMS_VERIFIED_ON} "
-        f"— see the source link with this plan."
+    explanation = i18n.scheme_explanation(
+        lang, project_cost, band_desc_en, band_desc_hi, scheme.value,
+        rate, tenure_years, moratorium_months, TERMS_VERIFIED_ON,
     )
+
+    all_schemes = schemes_catalog.mark_recommended(all_schemes, scheme.value)
 
     return FinancialPlan(
         available_margin_capital=available_margin_capital,
@@ -297,4 +311,5 @@ def build_financial_plan(available_margin_capital: float) -> FinancialPlan:
         warnings=warnings,
         official_source_url=source_url,
         terms_verified_on=TERMS_VERIFIED_ON,
+        all_schemes=all_schemes,
     )
