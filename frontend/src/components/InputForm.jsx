@@ -3,7 +3,7 @@ const CATEGORIES = [
   'Handicrafts', 'Agri Input Store', 'Tailoring', 'Other',
 ]
 
-export default function InputForm({ form, setForm, onSubmit, loading }) {
+export default function InputForm({ form, setForm, onSubmit, loading, showBusinessName = false }) {
   function update(key, value) {
     setForm((prev) => ({ ...prev, [key]: value }))
   }
@@ -13,6 +13,19 @@ export default function InputForm({ form, setForm, onSubmit, loading }) {
       className="panel"
       onSubmit={(e) => { e.preventDefault(); onSubmit() }}
     >
+      {showBusinessName && (
+        <div className="field">
+          <label htmlFor="business_name">Name this business plan</label>
+          <input id="business_name" value={form.business_name}
+            onChange={(e) => update('business_name', e.target.value)}
+            placeholder="e.g. Meena's Dairy" />
+          <span className="field-hint">
+            Use the same name each time you check in on this business — your
+            saved plans will group together as one timeline.
+          </span>
+        </div>
+      )}
+
       <h3>1. Where are you starting your business?</h3>
       <div className="field-row">
         <div className="field">
