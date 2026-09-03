@@ -90,6 +90,7 @@ def _build_market_reach(req: AdvisoryRequest) -> MarketReach:
         estimated_consumer_base=pop["estimated_consumer_base"],
         primary_distribution_channels=channels,
         data_source=pop["source"],
+        source_url=pop.get("source_url", ""),
         confidence=_confidence_from_source(pop["source"]),
     )
 
@@ -103,6 +104,7 @@ def _build_competitor_mapping(req: AdvisoryRequest) -> CompetitorMapping:
         density_rating=comp["density_rating"],
         nearest_competitor_distance_km=comp["nearest_competitor_distance_km"],
         data_source=comp["source"],
+        source_url=comp.get("source_url", ""),
         confidence=_confidence_from_source(comp["source"]),
     )
 
@@ -135,6 +137,7 @@ def _build_pricing(req: AdvisoryRequest, project_cost: float) -> PricingRecommen
         predicted_local_market_value=predicted_value,
         pricing_rationale=rationale,
         data_source=price["source"],
+        source_url=price.get("source_url", ""),
         confidence=_confidence_from_source(price["source"]),
     )
 
@@ -487,11 +490,20 @@ def build_feasibility_report(req: AdvisoryRequest, project_cost: float) -> Feasi
 
     overall_confidence = ConfidenceLevel.high if profile.get("found") else ConfidenceLevel.medium
 
+    if project_cost <= 140_000:
+        matched_scheme_name = "NSFDC Micro Finance Scheme"
+    elif project_cost <= 1_000_000:
+        matched_scheme_name = "NSFDC SUVIDHA Loan Scheme"
+    elif project_cost <= 5_000_000:
+        matched_scheme_name = "NSFDC UTKARSH Loan Scheme"
+    else:
+        matched_scheme_name = "no scheme in this tool's scope (project cost exceeds Rs. 50 Lakh)"
+
     next_steps = [
         f"Visit the nearest Common Service Centre (CSC) or RSETI office in {req.district} with this report.",
         "Prepare: Aadhaar, PAN, address proof, and margin-money bank statement.",
-        f"Apply under the {'PMEGP Micro Finance' if project_cost <= 140000 else 'PMEGP Term Loan'} "
-        f"Scheme — project cost Rs. {project_cost:,.0f}.",
+        f"Apply under the {matched_scheme_name} — project cost Rs. {project_cost:,.0f}. "
+        f"See the Financial Plan section above for the exact terms and official source link.",
         f"Talk to 3–5 local {category.lower()} businesses to validate the Rs. "
         f"{pricing.suggested_price_range_min}–{pricing.suggested_price_range_max} "
         f"{pricing.unit} price assumption before finalising your business plan.",
