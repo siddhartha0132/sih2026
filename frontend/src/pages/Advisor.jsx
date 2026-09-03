@@ -1,12 +1,12 @@
-import { useState, useRef } from 'react'
-import { jsPDF } from 'jspdf'
-import html2canvas from 'html2canvas'
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import InputForm from '../components/InputForm.jsx'
-import FeasibilityCard from '../components/FeasibilityCard.jsx'
-import FinancialPlanCard from '../components/FinancialPlanCard.jsx'
+import ReportView from '../components/ReportView.jsx'
 import { getAdvisory } from '../api/client.js'
+import { useAuth } from '../context/AuthContext.jsx'
 
 const initialForm = {
+  business_name: '',
   village: '',
   block: '',
   district: '',
@@ -21,14 +21,21 @@ const initialForm = {
   language: 'en',
 }
 
-export default function Advisor() {
+/**
+ * One form + report screen used by both modes:
+ *  - mode="open":     no token sent, nothing saved (route: /advisor/open)
+ *  - mode="personal": token sent, backend auto-saves to history (route:
+ *    /advisor/personal, wrapped in ProtectedRoute so you can't get here
+ *    without being logged in)
+ */
+export default function Advisor({ mode }) {
+  const { token } = useAuth()
+  const isPersonal = mode === 'personal'
+
   const [form, setForm] = useState(initialForm)
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [isDownloading, setIsDownloading] = useState(false)
-  
-  const reportRef = useRef(null)
 
   async function handleSubmit() {
     setLoading(true)
@@ -39,8 +46,9 @@ export default function Advisor() {
         ...form,
         available_margin_capital: Number(form.available_margin_capital),
         applicant_age: form.applicant_age ? Number(form.applicant_age) : null,
+        business_name: isPersonal ? (form.business_name || null) : null,
       }
-      const data = await getAdvisory(payload)
+      const data = await getAdvisory(payload, isPersonal ? token : null)
       setResult(data)
     } catch (err) {
       setError(err.message || 'Something went wrong. Please check the backend is running.')
@@ -49,47 +57,25 @@ export default function Advisor() {
     }
   }
 
-  async function downloadPDF() {
-    if (!reportRef.current) return;
-    setIsDownloading(true);
-    try {
-      const canvas = await html2canvas(reportRef.current, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff' // Force white background for PDF
-      });
-      const imgData = canvas.toDataURL('image/jpeg', 1.0);
-      
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      });
-      
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      
-      // If content is longer than one page, it will just scale down to fit on one long page for now,
-      // or we can add logic for multipage, but scaling to width is usually fine for these reports.
-      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`GramVyapaar_Report_${form.district}_${form.business_category}.pdf`);
-    } catch (err) {
-      console.error("Failed to generate PDF", err);
-      alert("Failed to download PDF. Please try again.");
-    } finally {
-      setIsDownloading(false);
-    }
-  }
-
   return (
     <div className="container section">
-      <h1>Build your business plan</h1>
-      <p>Enter your location, available capital, and business idea. We'll calculate your
-      exact loan eligibility, match your scheme, and generate a local feasibility report.</p>
+      <h1>{isPersonal ? 'Build your business plan' : 'Try it now — no account needed'}</h1>
+      <p>
+        Enter your location, available capital, and business idea. We'll calculate your
+        exact loan eligibility, match your scheme, and generate a local feasibility report.
+        {isPersonal
+          ? ' This run will be saved to your personal history automatically.'
+          : ' Nothing is saved — this is a one-off, open-use report.'}
+      </p>
 
       <div style={{ maxWidth: 640, marginTop: 24 }}>
-        <InputForm form={form} setForm={setForm} onSubmit={handleSubmit} loading={loading} />
+        <InputForm
+          form={form}
+          setForm={setForm}
+          onSubmit={handleSubmit}
+          loading={loading}
+          showBusinessName={isPersonal}
+        />
       </div>
 
       {error && (
@@ -100,23 +86,16 @@ export default function Advisor() {
 
       {result && (
         <div style={{ marginTop: 40 }}>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
-            <button 
-              className="btn btn-primary" 
-              onClick={downloadPDF}
-              disabled={isDownloading}
-            >
-              {isDownloading ? 'Generating PDF...' : '📄 Download PDF Report'}
-            </button>
-          </div>
-          
-          <div ref={reportRef} style={{ background: 'var(--color-bg)', padding: '20px', borderRadius: '16px' }}>
-            <FeasibilityCard report={result.feasibility_report} />
-            <FinancialPlanCard plan={result.financial_plan} />
-            <div className="disclaimer" style={{ marginTop: 24 }}>
-              {result.disclaimer}
-            </div>
-          </div>
+          {isPersonal && result.history_id && (
+            <p style={{ marginBottom: 16 }}>
+              ✅ Saved to your history.{' '}
+              <Link to="/history">View all your saved plans</Link>
+            </p>
+          )}
+          <ReportView
+            response={result}
+            fileLabel={`GramVyapaar_Report_${form.district}_${form.business_category}`}
+          />
         </div>
       )}
     </div>
