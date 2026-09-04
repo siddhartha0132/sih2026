@@ -88,21 +88,26 @@ def _display_category(req: AdvisoryRequest) -> str:
     enum value in that case renders as the grammatically broken "A Other
     business in..." and tells the reader nothing about the actual business.
     Fall back to a safe generic phrase instead.
+
+    NOTE: business_category_other is the applicant's own free-typed text and
+    is never machine-translated (no translation API in this project) - it is
+    used verbatim regardless of report language. Only a KNOWN category enum
+    value (or the "small" fallback) gets localized, via i18n.category_label.
     """
+    lang = i18n.normalize_language(req.language)
     if req.business_category_other:
         return req.business_category_other
     if req.business_category.value == "Other":
-        return "small"
-    return req.business_category.value
+        return i18n.category_label(lang, "small")
+    return i18n.category_label(lang, req.business_category.value)
 
 
 def _build_market_reach(req: AdvisoryRequest) -> MarketReach:
+    lang = i18n.normalize_language(req.language)
     pop = market_data.get_population_estimate(
         req.village, req.block or "", req.district, DEFAULT_RADIUS_KM
     )
-    channels = market_data.CATEGORY_DISTRIBUTION_CHANNELS.get(
-        req.business_category.value, ["Local haat/market", "Direct sale"]
-    )
+    channels = i18n.distribution_channels(lang, req.business_category.value)
     return MarketReach(
         radius_km=DEFAULT_RADIUS_KM,
         estimated_consumer_base=pop["estimated_consumer_base"],
@@ -128,8 +133,9 @@ def _build_competitor_mapping(req: AdvisoryRequest) -> CompetitorMapping:
 
 
 def _build_pricing(req: AdvisoryRequest, project_cost: float) -> PricingRecommendation:
+    lang = i18n.normalize_language(req.language)
     price  = market_data.get_commodity_price_trend(req.business_category.value, req.district, req.state)
-    unit   = market_data.CATEGORY_UNITS.get(req.business_category.value, "per unit")
+    unit   = i18n.category_unit(lang, req.business_category.value)
     base   = price["reference_price"]
     trend  = price["trend_percent_last_30_days"]
     # Selling price band: ±10% of realistic reference price
@@ -142,12 +148,19 @@ def _build_pricing(req: AdvisoryRequest, project_cost: float) -> PricingRecommen
     mandi_rate = price.get("mandi_modal_price_per_quintal", 0)
     trend_dir = "up" if trend >= 0 else "down"
 
-    rationale = (
-        f"Based on real {commodity} mandi prices ({scope}: Rs. {mandi_rate}/quintal from Agmarknet), "
-        f"a sustainable selling price band for {_display_category(req)} is Rs. {low}–{high} {unit}. "
-        f"The 30-day market price trend is {trend_dir} {abs(trend)}% — "
-        f"{'a favourable signal for new entrants' if trend >= 0 else 'factor this into your working-capital buffer'}."
+    localized = i18n.pricing_rationale(
+        lang, commodity, scope, mandi_rate, _display_category(req),
+        low, high, unit, trend >= 0, trend,
     )
+    if localized is not None:
+        rationale = localized
+    else:
+        rationale = (
+            f"Based on real {commodity} mandi prices ({scope}: Rs. {mandi_rate}/quintal from Agmarknet), "
+            f"a sustainable selling price band for {_display_category(req)} is Rs. {low}–{high} {unit}. "
+            f"The 30-day market price trend is {trend_dir} {abs(trend)}% — "
+            f"{'a favourable signal for new entrants' if trend >= 0 else 'factor this into your working-capital buffer'}."
+        )
     return PricingRecommendation(
         suggested_price_range_min=low,
         suggested_price_range_max=high,
@@ -165,13 +178,22 @@ def _build_opportunity_analysis(
     competitor: CompetitorMapping,
     profile: Dict,
 ) -> OpportunityAnalysis:
-    category  = req.business_category.value
+    lang      = i18n.normalize_language(req.language)
+    category  = _display_category(req)
     density   = competitor.density_rating
     lit_rate  = profile.get("literacy_rate", 0.65)
     agri_pct  = profile.get("agricultural_worker_pct", 0.45)
+    agri_cat  = req.business_category.value in ("Dairy", "Poultry", "Agri Input Store")
 
-    # Category fit narrative
-    agri_cat = category in ("Dairy", "Poultry", "Agri Input Store")
+    localized_niches, localized_rationale = i18n.opportunity_analysis(
+        lang, category, density, competitor.estimated_similar_businesses_nearby,
+        round(lit_rate * 100, 1), agri_pct, agri_cat,
+        getattr(competitor, "density_percentile_rajasthan", None),
+    )
+    if localized_niches is not None:
+        return OpportunityAnalysis(underserved_niches=localized_niches, rationale=localized_rationale)
+
+    # Category fit narrative (English)
     if density == "Low":
         niches = [
             f"First-mover advantage: {category} is under-served in this area with "
@@ -217,10 +239,21 @@ def _build_swot(
     project_cost: float,
     profile: Dict,
 ) -> SWOTAnalysis:
-    category = req.business_category.value
+    lang     = i18n.normalize_language(req.language)
+    category = _display_category(req)
     lit_rate = profile.get("literacy_rate", 0.65)
     mobile   = profile.get("mobile_penetration", 0.55)
     electric = profile.get("electric_penetration", 0.70)
+    legal = req.legal_structure.value if req.legal_structure else "none_informal"
+    legal_informal = legal in ("none_informal", "not_sure")
+
+    localized = i18n.swot(
+        lang, category, req.available_margin_capital, req.is_first_time_entrepreneur,
+        legal_informal, round(mobile * 100, 0), round(electric * 100, 0), round(lit_rate * 100, 1),
+        competitor.density_rating,
+    )
+    if localized is not None:
+        return SWOTAnalysis(**localized)
 
     strengths = [
         f"Owner contributes Rs. {req.available_margin_capital:,.0f} as margin money — "
@@ -245,8 +278,7 @@ def _build_swot(
         "Working capital buffer is limited at this project-cost scale — any 1–2 month demand dip "
         "could stress repayment cash flows.",
     ]
-    legal = req.legal_structure.value if req.legal_structure else "none_informal"
-    if legal in ("none_informal", "not_sure"):
+    if legal_informal:
         weaknesses.append(
             "Currently no formal legal structure — this is completely normal at this stage and "
             "does not block scheme eligibility, but registering as a sole proprietorship (or "
@@ -279,6 +311,14 @@ def _build_swot(
 
 
 def _build_threats(req: AdvisoryRequest, competitor: CompetitorMapping) -> List[ThreatFlag]:
+    lang = i18n.normalize_language(req.language)
+    localized = i18n.threats(lang, competitor.density_rating == "High", req.is_first_time_entrepreneur)
+    if localized is not None:
+        return [
+            ThreatFlag(threat=name, severity=severity, mitigation=mitigation)
+            for name, severity, mitigation in localized
+        ]
+
     threats = [
         ThreatFlag(
             threat="Seasonal demand fluctuation",
@@ -477,14 +517,14 @@ def _narrative_summary(
     density  = competitor.density_rating.lower()
     lang = i18n.normalize_language(req.language)
 
-    hi_summary = i18n.narrative_summary(
+    localized_summary = i18n.narrative_summary(
         lang, category, req.village, req.district, score,
         competitor.estimated_similar_businesses_nearby, density, lit_pct, mobile_p,
         pricing.suggested_price_range_min, pricing.suggested_price_range_max, pricing.unit,
     )
-    if hi_summary is not None:
+    if localized_summary is not None:
         stage_note = _business_stage_narrative_note(req, lang)
-        return f"{hi_summary} {stage_note}".strip()
+        return f"{localized_summary} {stage_note}".strip()
 
     verdict = (
         "a strong opportunity" if score >= 65 else
@@ -519,37 +559,7 @@ def _business_stage_narrative_note(req: AdvisoryRequest, lang: str) -> str:
     just the numbers.
     """
     stage = (req.business_stage.value if req.business_stage else "idea")
-    if lang == "hi":
-        if stage == "ongoing":
-            return (
-                "चूंकि आप पहले से यह व्यवसाय चला रहे हैं, यह रिपोर्ट आपकी मौजूदा आमदनी को आधार "
-                "मानकर विस्तार पर केंद्रित है, न कि शुरुआत पर।"
-            )
-        if stage == "researching":
-            return (
-                "चूंकि आप अभी सिर्फ जानकारी जुटा रहे हैं, इस रिपोर्ट को अंतिम निर्णय लेने से पहले "
-                "एक शुरुआती मार्गदर्शक की तरह इस्तेमाल करें — पूंजी लगाने से पहले स्थानीय बाजार में जाकर पुष्टि करें।"
-            )
-        return (
-            "चूंकि यह अभी सिर्फ एक विचार है, पूंजी लगाने से पहले इस रिपोर्ट की हर धारणा को अपने "
-            "गांव में 3-5 लोगों से बात करके जरूर जांच लें।"
-        )
-    if stage == "ongoing":
-        return (
-            "Since you already run this business, this report is anchored on your existing "
-            "numbers and focused on what expansion could realistically look like — not on "
-            "whether to start at all."
-        )
-    if stage == "researching":
-        return (
-            "Since you're still researching, treat this report as an early-stage guide rather "
-            "than a final decision — validate its assumptions against your own village before "
-            "putting in any capital."
-        )
-    return (
-        "Since this is currently just an idea, validate every assumption in this report by "
-        "talking to 3-5 real people in your village before committing any capital."
-    )
+    return i18n.business_stage_narrative_note(lang, stage)
 
 
 def build_feasibility_report(req: AdvisoryRequest, project_cost: float) -> FeasibilityReport:
@@ -594,6 +604,7 @@ def build_feasibility_report(req: AdvisoryRequest, project_cost: float) -> Feasi
             if req.business_stage == "ongoing" or (req.business_stage and req.business_stage.value == "ongoing")
             else None
         ),
+        lang=lang,
     )
 
     stage_value = req.business_stage.value if req.business_stage else "idea"

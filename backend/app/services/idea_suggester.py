@@ -10,6 +10,7 @@ import re
 from typing import Dict, List, Tuple
 
 from app.schemas import BusinessCategory, ConfidenceLevel, IdeaSuggestionResponse
+from app.services import i18n
 
 # Keyword sets per category, in English and common Hindi/Hinglish terms a
 # rural applicant might actually type. Order matters only for tie-breaking.
@@ -70,18 +71,21 @@ CATEGORY_STARTING_MARGIN: Dict[BusinessCategory, float] = {
 }
 
 
-def _likely_scheme_hint(margin_capital: float) -> str:
+def _likely_scheme_hint(margin_capital: float, lang: str = "en") -> str:
     project_cost = margin_capital / 0.10
     if project_cost <= 140_000:
-        return "likely the NSFDC Micro Finance Scheme (project cost under Rs. 1.40 Lakh)"
-    if project_cost <= 1_000_000:
-        return "likely the NSFDC SUVIDHA Loan Scheme (project cost Rs. 1.40-10 Lakh)"
-    if project_cost <= 5_000_000:
-        return "likely the NSFDC UTKARSH Loan Scheme (project cost Rs. 10-50 Lakh), or PMEGP/MUDRA"
-    return "likely PMEGP, MUDRA, or Stand-Up India (project cost above the NSFDC Rs. 50 Lakh ceiling)"
+        tier_key, en = "micro", "likely the NSFDC Micro Finance Scheme (project cost under Rs. 1.40 Lakh)"
+    elif project_cost <= 1_000_000:
+        tier_key, en = "suvidha", "likely the NSFDC SUVIDHA Loan Scheme (project cost Rs. 1.40-10 Lakh)"
+    elif project_cost <= 5_000_000:
+        tier_key, en = "utkarsh", "likely the NSFDC UTKARSH Loan Scheme (project cost Rs. 10-50 Lakh), or PMEGP/MUDRA"
+    else:
+        tier_key, en = "above", "likely PMEGP, MUDRA, or Stand-Up India (project cost above the NSFDC Rs. 50 Lakh ceiling)"
+    return i18n.likely_scheme_hint(lang, tier_key) or en
 
 
-def suggest_from_idea(description: str, available_margin_capital: float = None) -> IdeaSuggestionResponse:
+def suggest_from_idea(description: str, available_margin_capital: float = None, language: str = "en") -> IdeaSuggestionResponse:
+    lang = i18n.normalize_language(language)
     text = description.lower()
     scores: List[Tuple[BusinessCategory, int, List[str]]] = []
     for category, keywords in CATEGORY_KEYWORDS.items():
@@ -91,18 +95,19 @@ def suggest_from_idea(description: str, available_margin_capital: float = None) 
 
     if not scores:
         margin = available_margin_capital or CATEGORY_STARTING_MARGIN[BusinessCategory.other]
+        explanation = i18n.idea_suggestion_no_match(lang) or (
+            "We couldn't confidently match your idea to one of our standard categories from "
+            "the words used - we've set it as 'Other' so you can describe it yourself. Feel "
+            "free to pick the closest category from the list instead if one fits better."
+        )
         return IdeaSuggestionResponse(
             detected_business_category=BusinessCategory.other,
             detected_business_category_other=description[:80],
             matched_keywords=[],
             suggested_starting_margin_capital=margin,
             confidence=ConfidenceLevel.low,
-            explanation=(
-                "We couldn't confidently match your idea to one of our standard categories from "
-                "the words used - we've set it as 'Other' so you can describe it yourself. Feel "
-                "free to pick the closest category from the list instead if one fits better."
-            ),
-            likely_scheme_hint=_likely_scheme_hint(margin),
+            explanation=explanation,
+            likely_scheme_hint=_likely_scheme_hint(margin, lang),
         )
 
     scores.sort(key=lambda x: x[1], reverse=True)
@@ -110,18 +115,21 @@ def suggest_from_idea(description: str, available_margin_capital: float = None) 
     margin = available_margin_capital or CATEGORY_STARTING_MARGIN[best_category]
     confidence = ConfidenceLevel.high if match_count >= 2 else ConfidenceLevel.medium
 
+    category_display = i18n.category_label(lang, best_category.value)
+    localized_explanation = i18n.idea_suggestion_matched(lang, matched_keywords, category_display, margin)
+    explanation = localized_explanation or (
+        f"Based on the words '{', '.join(matched_keywords)}' in your description, this looks "
+        f"like a {best_category.value} business. If you already have some savings to put in, "
+        f"enter that instead - otherwise Rs. {margin:,.0f} is a realistic amount to start "
+        f"exploring with for a {best_category.value.lower()} business of this scale."
+    )
     return IdeaSuggestionResponse(
         detected_business_category=best_category,
         detected_business_category_other=None,
         matched_keywords=matched_keywords,
         suggested_starting_margin_capital=margin,
         confidence=confidence,
-        explanation=(
-            f"Based on the words '{', '.join(matched_keywords)}' in your description, this looks "
-            f"like a {best_category.value} business. If you already have some savings to put in, "
-            f"enter that instead - otherwise Rs. {margin:,.0f} is a realistic amount to start "
-            f"exploring with for a {best_category.value.lower()} business of this scale."
-        ),
-        likely_scheme_hint=_likely_scheme_hint(margin),
+        explanation=explanation,
+        likely_scheme_hint=_likely_scheme_hint(margin, lang),
     )
 

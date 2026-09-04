@@ -4,6 +4,8 @@ import InputForm from '../components/InputForm.jsx'
 import ReportView from '../components/ReportView.jsx'
 import { getAdvisory } from '../api/client.js'
 import { useAuth } from '../context/AuthContext.jsx'
+import { useLanguage } from '../LanguageContext.jsx'
+import { t } from '../i18n.js'
 
 const initialForm = {
   business_name: '',
@@ -34,9 +36,10 @@ const initialForm = {
  */
 export default function Advisor({ mode }) {
   const { token } = useAuth()
+  const { language: globalLanguage } = useLanguage()
   const isPersonal = mode === 'personal'
 
-  const [form, setForm] = useState(initialForm)
+  const [form, setForm] = useState(() => ({ ...initialForm, language: globalLanguage }))
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -57,21 +60,21 @@ export default function Advisor({ mode }) {
       const data = await getAdvisory(payload, isPersonal ? token : null)
       setResult(data)
     } catch (err) {
-      setError(err.message || 'Something went wrong. Please check the backend is running.')
+      setError(err.message || t(form.language, 'advisor.errorFallback'))
     } finally {
       setLoading(false)
     }
   }
 
+  const lang = form.language
   return (
     <div className="container section">
-      <h1>{isPersonal ? 'Build your business plan' : 'Try it now — no account needed'}</h1>
+      <h1>{isPersonal ? t(lang, 'advisor.titlePersonal') : t(lang, 'advisor.titleOpen')}</h1>
       <p>
-        Enter your location, available capital, and business idea. We'll calculate your
-        exact loan eligibility, match your scheme, and generate a local feasibility report.
+        {t(lang, 'advisor.description')}
         {isPersonal
-          ? ' This run will be saved to your personal history automatically.'
-          : ' Nothing is saved — this is a one-off, open-use report.'}
+          ? t(lang, 'advisor.savedNote')
+          : t(lang, 'advisor.openNote')}
       </p>
 
       <div style={{ maxWidth: 640, marginTop: 24 }}>
@@ -94,12 +97,13 @@ export default function Advisor({ mode }) {
         <div style={{ marginTop: 40 }}>
           {isPersonal && result.history_id && (
             <p style={{ marginBottom: 16 }}>
-              ✅ Saved to your history.{' '}
-              <Link to="/history">View all your saved plans</Link>
+              {t(lang, 'advisor.savedToHistory')}{' '}
+              <Link to="/history">{t(lang, 'advisor.viewAllPlans')}</Link>
             </p>
           )}
           <ReportView
             response={result}
+            language={lang}
             fileLabel={`GramVyapaar_Report_${form.district}_${form.business_category}`}
           />
         </div>

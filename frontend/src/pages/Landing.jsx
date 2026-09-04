@@ -1,8 +1,11 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
+import { useLanguage } from '../LanguageContext.jsx'
+import { t } from '../i18n.js'
 
 export default function Landing() {
   const { isLoggedIn } = useAuth()
+  const { language } = useLanguage()
   const navigate = useNavigate()
 
   function choosePersonal() {
@@ -12,43 +15,34 @@ export default function Landing() {
   return (
     <>
       <section className="section container">
-        <h1>Know your market. Know your loan.<br />Before you borrow a rupee.</h1>
+        <h1 dangerouslySetInnerHTML={{ __html: t(language, 'landing.heroHeading') }} />
         <p>
-          GramVyapaar AI turns a few simple answers — your village, your available
-          capital, and your business idea — into a hyper-local feasibility report
-          and an exact financial roadmap: project cost, loan eligibility, every
-          scheme you qualify for, and a real repayment schedule. Answers come back
-          in your own language, with a simple step-by-step flowchart instead of
-          confusing graphs.
+          {t(language, 'landing.heroParagraph')}
         </p>
       </section>
 
       <section className="section container">
-        <h2>How do you want to use it?</h2>
+        <h2>{t(language, 'landing.howToUse')}</h2>
         <div className="swot-grid" style={{ marginTop: 20 }}>
           <div className="swot-box">
-            <h4>Personal use</h4>
+            <h4>{t(language, 'landing.personalTitle')}</h4>
             <p>
-              For your own business plan. Log in to save every report, and come
-              back later to see how your plan and numbers evolve as your
-              business grows.
+              {t(language, 'landing.personalDesc')}
             </p>
             <div style={{ marginTop: 16 }}>
               <button className="btn btn-primary" onClick={choosePersonal}>
-                {isLoggedIn ? 'Go to my plan' : 'Log in / Sign up'}
+                {isLoggedIn ? t(language, 'landing.goToMyPlan') : t(language, 'landing.loginSignup')}
               </button>
             </div>
           </div>
           <div className="swot-box">
-            <h4>Open use</h4>
+            <h4>{t(language, 'landing.openTitle')}</h4>
             <p>
-              Try it instantly for anyone — no account, nothing saved. Enter
-              your details, get your feasibility report and financial plan
-              right away.
+              {t(language, 'landing.openDesc')}
             </p>
             <div style={{ marginTop: 16 }}>
               <Link to="/advisor/open" className="btn btn-secondary">
-                Use without an account
+                {t(language, 'landing.useWithoutAccount')}
               </Link>
             </div>
           </div>
@@ -59,15 +53,15 @@ export default function Landing() {
         <div className="stat-row">
           <div className="stat">
             <div className="stat-value">10%</div>
-            <div className="stat-label">Your margin money contribution</div>
+            <div className="stat-label">{t(language, 'landing.marginContribution')}</div>
           </div>
           <div className="stat">
             <div className="stat-value">90%</div>
-            <div className="stat-label">Concessional loan from the Channelizing Agency</div>
+            <div className="stat-label">{t(language, 'landing.concessionalLoan')}</div>
           </div>
           <div className="stat">
-            <div className="stat-value">6 schemes checked</div>
-            <div className="stat-label">NSFDC's 3 tiers, PMEGP, MUDRA &amp; Stand-Up India — every real option, not just one</div>
+            <div className="stat-value">{t(language, 'landing.schemesChecked')}</div>
+            <div className="stat-label">{t(language, 'landing.schemesCheckedDesc')}</div>
           </div>
         </div>
       </section>

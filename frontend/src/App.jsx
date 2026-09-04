@@ -6,9 +6,26 @@ import History from './pages/History.jsx'
 import HistoryDetail from './pages/HistoryDetail.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import { AuthProvider, useAuth } from './context/AuthContext.jsx'
+import { LanguageProvider, useLanguage } from './LanguageContext.jsx'
+import { LANGUAGES, t } from './i18n.js'
+
+function LanguageSwitcher() {
+  const { language, setLanguage } = useLanguage()
+  return (
+    <select
+      aria-label="Language"
+      value={language}
+      onChange={(e) => setLanguage(e.target.value)}
+      className="lang-switcher"
+    >
+      {LANGUAGES.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}
+    </select>
+  )
+}
 
 function Header() {
   const { isLoggedIn, user, logout } = useAuth()
+  const { language } = useLanguage()
   const navigate = useNavigate()
 
   function handleLogout() {
@@ -24,15 +41,16 @@ function Header() {
           GramVyapaar AI
         </Link>
         <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-          <span className="tagline">Right Advice. Right Scheme. Stronger Future.</span>
+          <span className="tagline">{t(language, 'app.tagline')}</span>
+          <LanguageSwitcher />
           {isLoggedIn ? (
             <>
-              <Link to="/history">My plans</Link>
-              <span className="tagline">Hi, {user?.name?.split(' ')[0]}</span>
-              <button className="btn btn-secondary" onClick={handleLogout}>Log out</button>
+              <Link to="/history">{t(language, 'app.myPlans')}</Link>
+              <span className="tagline">{t(language, 'app.hi', { name: user?.name?.split(' ')[0] })}</span>
+              <button className="btn btn-secondary" onClick={handleLogout}>{t(language, 'app.logOut')}</button>
             </>
           ) : (
-            <Link to="/login" className="btn btn-secondary">Log in</Link>
+            <Link to="/login" className="btn btn-secondary">{t(language, 'app.logIn')}</Link>
           )}
         </div>
       </div>
@@ -40,44 +58,53 @@ function Header() {
   )
 }
 
+function Footer() {
+  const { language } = useLanguage()
+  return (
+    <footer>
+      {t(language, 'app.footer')}
+    </footer>
+  )
+}
+
 export default function App() {
   return (
-    <AuthProvider>
-      <Header />
-      <main>
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/advisor/open" element={<Advisor mode="open" />} />
-          <Route
-            path="/advisor/personal"
-            element={
-              <ProtectedRoute>
-                <Advisor mode="personal" />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/history"
-            element={
-              <ProtectedRoute>
-                <History />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/history/:id"
-            element={
-              <ProtectedRoute>
-                <HistoryDetail />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
-      </main>
-      <footer>
-        Built for SIH26091 — Ministry of Social Justice &amp; Empowerment · Team Lumicore
-      </footer>
-    </AuthProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <Header />
+        <main>
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/advisor/open" element={<Advisor mode="open" />} />
+            <Route
+              path="/advisor/personal"
+              element={
+                <ProtectedRoute>
+                  <Advisor mode="personal" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/history"
+              element={
+                <ProtectedRoute>
+                  <History />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/history/:id"
+              element={
+                <ProtectedRoute>
+                  <HistoryDetail />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </main>
+        <Footer />
+      </AuthProvider>
+    </LanguageProvider>
   )
 }

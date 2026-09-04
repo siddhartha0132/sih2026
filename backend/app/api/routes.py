@@ -90,5 +90,5 @@ def get_idea_suggestion(request: IdeaSuggestionRequest):
     scheme hint — to pre-fill the main form rather than replace it.
     """
     return idea_suggester.suggest_from_idea(
-        request.business_idea_description, request.available_margin_capital
+        request.business_idea_description, request.available_margin_capital, request.language
     )

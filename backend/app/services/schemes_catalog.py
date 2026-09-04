@@ -23,6 +23,7 @@ reporting the same official terms is cited instead and noted as such.
 from typing import List, Optional
 
 from app.schemas import SchemeOption
+from app.services import i18n
 
 TERMS_VERIFIED_ON = "2026-09-03"
 
@@ -48,7 +49,7 @@ MUDRA_URL = "https://stashfin.com/blog/mudra-loan/"
 STANDUP_INDIA_URL = "https://www.standupmitra.in/"
 
 
-def _pmegp_option(project_cost: float, category: str) -> SchemeOption:
+def _pmegp_option(project_cost: float, category: str, lang: str = "en") -> SchemeOption:
     # PMEGP caps: Rs. 50 Lakh for manufacturing, Rs. 20 Lakh for service/trading.
     # Rural micro-enterprise categories here are mostly service/trading-scale,
     # so we apply the more conservative Rs. 20 Lakh general ceiling by default,
@@ -56,6 +57,22 @@ def _pmegp_option(project_cost: float, category: str) -> SchemeOption:
     is_manufacturing_like = category in ("Food Processing", "Textiles", "Handicrafts")
     cap = 5_000_000 if is_manufacturing_like else 2_000_000
     eligible = project_cost <= cap
+    localized = i18n.pmegp_texts(lang, project_cost, cap, is_manufacturing_like, eligible)
+    if localized is not None:
+        return SchemeOption(
+            scheme_name="PMEGP (Prime Minister's Employment Generation Programme)",
+            operating_agency=localized["operating_agency"],
+            is_eligible=eligible,
+            eligibility_note=localized["eligibility_note"],
+            max_project_cost=cap,
+            max_loan_amount=cap * 0.95,
+            subsidy_or_margin_money_note=localized["subsidy_or_margin_money_note"],
+            interest_rate_percent_range=localized["interest_rate_percent_range"],
+            tenure_years=localized["tenure_years"],
+            description=localized["description"],
+            official_source_url=PMEGP_URL,
+            terms_verified_on=TERMS_VERIFIED_ON,
+        )
     note = (
         f"Project cost of Rs. {project_cost:,.0f} is within the PMEGP ceiling "
         f"(Rs. {cap:,.0f} for {'manufacturing' if is_manufacturing_like else 'service/trading'} "
@@ -89,7 +106,7 @@ def _pmegp_option(project_cost: float, category: str) -> SchemeOption:
     )
 
 
-def _mudra_option(project_cost: float) -> SchemeOption:
+def _mudra_option(project_cost: float, lang: str = "en") -> SchemeOption:
     # MUDRA tiers: Shishu (<=50k), Kishor (50k-5L), Tarun (5L-10L), Tarun Plus (10L-20L).
     cap = 2_000_000
     eligible = project_cost <= cap
@@ -101,13 +118,30 @@ def _mudra_option(project_cost: float) -> SchemeOption:
         tier = "Tarun"
     else:
         tier = "Tarun Plus"
+    scheme_name = f"MUDRA Loan - {tier} tier" if eligible else "MUDRA Loan (PMMY)"
+    localized = i18n.mudra_texts(lang, project_cost, cap, tier, eligible)
+    if localized is not None:
+        return SchemeOption(
+            scheme_name=scheme_name,
+            operating_agency=localized["operating_agency"],
+            is_eligible=eligible,
+            eligibility_note=localized["eligibility_note"],
+            max_project_cost=cap,
+            max_loan_amount=cap,
+            subsidy_or_margin_money_note=localized["subsidy_or_margin_money_note"],
+            interest_rate_percent_range=localized["interest_rate_percent_range"],
+            tenure_years=localized["tenure_years"],
+            description=localized["description"],
+            official_source_url=MUDRA_URL,
+            terms_verified_on=TERMS_VERIFIED_ON,
+        )
     note = (
         f"Project cost of Rs. {project_cost:,.0f} falls in the MUDRA '{tier}' tier."
         if eligible else
         f"Project cost of Rs. {project_cost:,.0f} exceeds the MUDRA ceiling of Rs. {cap:,.0f}."
     )
     return SchemeOption(
-        scheme_name=f"MUDRA Loan - {tier} tier" if eligible else "MUDRA Loan (PMMY)",
+        scheme_name=scheme_name,
         operating_agency="Any Bank / NBFC / MFI (Pradhan Mantri MUDRA Yojana)",
         is_eligible=eligible,
         eligibility_note=note,
@@ -127,7 +161,8 @@ def _mudra_option(project_cost: float) -> SchemeOption:
 
 
 def _standup_india_option(
-    project_cost: float, applicant_gender: Optional[str], is_first_time_entrepreneur: Optional[bool]
+    project_cost: float, applicant_gender: Optional[str], is_first_time_entrepreneur: Optional[bool],
+    lang: str = "en",
 ) -> SchemeOption:
     # Stand-Up India: Rs. 10L-100L, for greenfield (first-time) enterprises by
     # SC/ST and/or women applicants. We can only check the "woman applicant" +
@@ -160,6 +195,22 @@ def _standup_india_option(
             f"Project cost of Rs. {project_cost:,.0f} is within the Rs. {floor:,.0f}-{cap:,.0f} "
             f"Stand-Up India band, for a first-time woman entrepreneur's new enterprise."
         )
+    localized = i18n.standup_india_texts(lang, project_cost, cap, floor, size_ok, category_ok, first_time, eligible)
+    if localized is not None:
+        return SchemeOption(
+            scheme_name="Stand-Up India",
+            operating_agency=localized["operating_agency"],
+            is_eligible=eligible,
+            eligibility_note=localized["eligibility_note"],
+            max_project_cost=cap,
+            max_loan_amount=cap * 0.85,
+            subsidy_or_margin_money_note=localized["subsidy_or_margin_money_note"],
+            interest_rate_percent_range=localized["interest_rate_percent_range"],
+            tenure_years=localized["tenure_years"],
+            description=localized["description"],
+            official_source_url=STANDUP_INDIA_URL,
+            terms_verified_on=TERMS_VERIFIED_ON,
+        )
     return SchemeOption(
         scheme_name="Stand-Up India",
         operating_agency="Scheduled Commercial Bank branches, via SIDBI/DFS",
@@ -180,7 +231,7 @@ def _standup_india_option(
     )
 
 
-def _nsfdc_options(project_cost: float) -> List[SchemeOption]:
+def _nsfdc_options(project_cost: float, lang: str = "en") -> List[SchemeOption]:
     """Represent the same 3 NSFDC tiers used in financial_calculator.py as SchemeOptions,
     so they appear consistently alongside PMEGP/MUDRA/Stand-Up India in the all-schemes list."""
     tiers = [
@@ -201,27 +252,44 @@ def _nsfdc_options(project_cost: float) -> List[SchemeOption]:
     prev_cap = 0
     for t in tiers:
         eligible = prev_cap < project_cost <= t["cap"] if prev_cap else project_cost <= t["cap"]
-        options.append(SchemeOption(
-            scheme_name=t["scheme_name"],
-            operating_agency="NSFDC (National Scheduled Castes Finance & Development Corporation), via State Channelizing Agencies",
-            is_eligible=eligible,
-            eligibility_note=(
-                f"Project cost of Rs. {project_cost:,.0f} matches this tier's band."
-                if eligible else
-                f"This tier covers project costs up to Rs. {t['cap']:,.0f}; your project is outside that band."
-            ),
-            max_project_cost=t["cap"],
-            max_loan_amount=t["loan_cap"],
-            subsidy_or_margin_money_note="No subsidy; standard 90% loan / 10% margin-money structure.",
-            interest_rate_percent_range=f"{t['rate']}% p.a. (concessional, fixed)",
-            tenure_years=t["tenure"],
-            description=(
-                "The primary scheme this tool builds your detailed EMI schedule against - "
-                "see the Financial Plan section above for the exact repayment numbers."
-            ),
-            official_source_url=t["url"],
-            terms_verified_on=TERMS_VERIFIED_ON,
-        ))
+        localized = i18n.nsfdc_option_texts(lang, project_cost, t["cap"], eligible, t["rate"], t["tenure"])
+        if localized is not None:
+            options.append(SchemeOption(
+                scheme_name=t["scheme_name"],
+                operating_agency=localized["operating_agency"],
+                is_eligible=eligible,
+                eligibility_note=localized["eligibility_note"],
+                max_project_cost=t["cap"],
+                max_loan_amount=t["loan_cap"],
+                subsidy_or_margin_money_note=localized["subsidy_or_margin_money_note"],
+                interest_rate_percent_range=localized["interest_rate_percent_range"],
+                tenure_years=t["tenure"],
+                description=localized["description"],
+                official_source_url=t["url"],
+                terms_verified_on=TERMS_VERIFIED_ON,
+            ))
+        else:
+            options.append(SchemeOption(
+                scheme_name=t["scheme_name"],
+                operating_agency="NSFDC (National Scheduled Castes Finance & Development Corporation), via State Channelizing Agencies",
+                is_eligible=eligible,
+                eligibility_note=(
+                    f"Project cost of Rs. {project_cost:,.0f} matches this tier's band."
+                    if eligible else
+                    f"This tier covers project costs up to Rs. {t['cap']:,.0f}; your project is outside that band."
+                ),
+                max_project_cost=t["cap"],
+                max_loan_amount=t["loan_cap"],
+                subsidy_or_margin_money_note="No subsidy; standard 90% loan / 10% margin-money structure.",
+                interest_rate_percent_range=f"{t['rate']}% p.a. (concessional, fixed)",
+                tenure_years=t["tenure"],
+                description=(
+                    "The primary scheme this tool builds your detailed EMI schedule against - "
+                    "see the Financial Plan section above for the exact repayment numbers."
+                ),
+                official_source_url=t["url"],
+                terms_verified_on=TERMS_VERIFIED_ON,
+            ))
         prev_cap = t["cap"]
     return options
 
@@ -231,16 +299,18 @@ def get_all_scheme_options(
     category: str,
     applicant_gender: Optional[str] = None,
     is_first_time_entrepreneur: Optional[bool] = True,
+    language: str = "en",
 ) -> List[SchemeOption]:
     """
     Returns every major scheme evaluated against this project's numbers,
     each flagged eligible/not-eligible with a plain-language reason - the
     "show me every real door, not just one" requirement.
     """
-    options = _nsfdc_options(project_cost)
-    options.append(_pmegp_option(project_cost, category))
-    options.append(_mudra_option(project_cost))
-    options.append(_standup_india_option(project_cost, applicant_gender, is_first_time_entrepreneur))
+    lang = i18n.normalize_language(language)
+    options = _nsfdc_options(project_cost, lang)
+    options.append(_pmegp_option(project_cost, category, lang))
+    options.append(_mudra_option(project_cost, lang))
+    options.append(_standup_india_option(project_cost, applicant_gender, is_first_time_entrepreneur, lang))
     return options
 
 

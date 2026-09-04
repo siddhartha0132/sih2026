@@ -327,6 +327,7 @@ class IdeaSuggestionRequest(BaseModel):
     available_margin_capital: Optional[float] = Field(
         None, gt=0, description="If already known, refines the scheme suggestion."
     )
+    language: Optional[str] = Field("en", description="Language for the explanation text (en/hi/kn/te).")
 
 
 class IdeaSuggestionResponse(BaseModel):

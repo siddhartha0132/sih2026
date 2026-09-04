@@ -163,6 +163,7 @@ def build_repayment_schedule(
     annual_interest_rate: float,
     tenure_years: int,
     moratorium_months: int,
+    lang: str = "en",
 ) -> Tuple[List[RepaymentInstallment], float, float, float]:
     """
     Builds a quarterly repayment schedule.
@@ -202,7 +203,7 @@ def build_repayment_schedule(
         new_balance = balance + interest_accrued
         schedule.append(
             RepaymentInstallment(
-                period_label=f"Quarter {q} (Moratorium — no payment due)",
+                period_label=(i18n.quarter_label(lang, q, is_moratorium=True) or f"Quarter {q} (Moratorium — no payment due)"),
                 opening_balance=round(balance, 2),
                 principal_component=0.0,
                 interest_component=round(interest_accrued, 2),
@@ -224,7 +225,7 @@ def build_repayment_schedule(
 
         schedule.append(
             RepaymentInstallment(
-                period_label=f"Quarter {moratorium_quarters + q}",
+                period_label=(i18n.quarter_label(lang, moratorium_quarters + q) or f"Quarter {moratorium_quarters + q}"),
                 opening_balance=round(balance, 2),
                 principal_component=round(principal_component, 2),
                 interest_component=round(interest_component, 2),
@@ -253,7 +254,7 @@ def build_financial_plan(
     loan_amount = min(uncapped_loan, loan_cap) if loan_cap else 0.0
 
     all_schemes = schemes_catalog.get_all_scheme_options(
-        project_cost, business_category, applicant_gender, is_first_time_entrepreneur
+        project_cost, business_category, applicant_gender, is_first_time_entrepreneur, language=lang
     )
 
     if scheme == SchemeName.not_eligible:
@@ -278,7 +279,7 @@ def build_financial_plan(
         )
 
     schedule, quarterly_installment, total_interest, total_repayable = build_repayment_schedule(
-        loan_amount, rate, tenure_years, moratorium_months
+        loan_amount, rate, tenure_years, moratorium_months, lang=lang
     )
 
     band_desc_en = {
@@ -291,10 +292,21 @@ def build_financial_plan(
         SchemeName.suvidha: "Rs. 1,40,000 और Rs. 10,00,000 के बीच (SUVIDHA श्रेणी)",
         SchemeName.utkarsh: "Rs. 10,00,000 और Rs. 50,00,000 के बीच (UTKARSH श्रेणी)",
     }[scheme]
+    band_desc_kn = {
+        SchemeName.micro_finance: "Rs. 1,40,000 ಮೈಕ್ರೋ ಫೈನಾನ್ಸ್ ಮಿತಿಯ ಒಳಗೆ",
+        SchemeName.suvidha: "Rs. 1,40,000 ಮತ್ತು Rs. 10,00,000 ರ ನಡುವೆ (SUVIDHA ವ್ಯಾಪ್ತಿ)",
+        SchemeName.utkarsh: "Rs. 10,00,000 ಮತ್ತು Rs. 50,00,000 ರ ನಡುವೆ (UTKARSH ವ್ಯಾಪ್ತಿ)",
+    }[scheme]
+    band_desc_te = {
+        SchemeName.micro_finance: "Rs. 1,40,000 మైక్రో ఫైనాన్స్ పరిమితి లోపల",
+        SchemeName.suvidha: "Rs. 1,40,000 మరియు Rs. 10,00,000 మధ్య (SUVIDHA పరిధి)",
+        SchemeName.utkarsh: "Rs. 10,00,000 మరియు Rs. 50,00,000 మధ్య (UTKARSH పరిధి)",
+    }[scheme]
 
     explanation = i18n.scheme_explanation(
         lang, project_cost, band_desc_en, band_desc_hi, scheme.value,
         rate, tenure_years, moratorium_months, TERMS_VERIFIED_ON,
+        band_desc_kn=band_desc_kn, band_desc_te=band_desc_te,
     )
 
     all_schemes = schemes_catalog.mark_recommended(all_schemes, scheme.value)

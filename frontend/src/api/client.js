@@ -30,11 +30,15 @@ export async function getAdvisory(payload, token) {
   return handleResponse(res)
 }
 
-export async function getIdeaSuggestion({ business_idea_description, available_margin_capital }) {
+export async function getIdeaSuggestion({ business_idea_description, available_margin_capital, language }) {
   const res = await fetch(`${API_BASE}/idea-suggestion`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ business_idea_description, available_margin_capital: available_margin_capital || null }),
+    body: JSON.stringify({
+      business_idea_description,
+      available_margin_capital: available_margin_capital || null,
+      language: language || 'en',
+    }),
   })
   return handleResponse(res)
 }

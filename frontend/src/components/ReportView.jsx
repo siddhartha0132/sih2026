@@ -5,13 +5,14 @@ import FeasibilityCard from './FeasibilityCard.jsx'
 import FinancialPlanCard from './FinancialPlanCard.jsx'
 import RevenueProjectionCard from './RevenueProjectionCard.jsx'
 import FlowchartView from './FlowchartView.jsx'
+import { t } from '../i18n.js'
 
 /**
  * Shared renderer for one AdvisoryResponse — used by the live Advisor flow
  * (open or personal use) and by the History detail view when replaying a
  * saved report, so both stay visually identical.
  */
-export default function ReportView({ response, fileLabel = 'GramVyapaar_Report' }) {
+export default function ReportView({ response, language = 'en', fileLabel = 'GramVyapaar_Report' }) {
   const reportRef = useRef(null)
   const [isDownloading, setIsDownloading] = useState(false)
 
@@ -33,7 +34,7 @@ export default function ReportView({ response, fileLabel = 'GramVyapaar_Report' 
       pdf.save(`${fileLabel}.pdf`)
     } catch (err) {
       console.error('Failed to generate PDF', err)
-      alert('Failed to download PDF. Please try again.')
+      alert(t(language, 'report.pdfFailed'))
     } finally {
       setIsDownloading(false)
     }
@@ -45,15 +46,15 @@ export default function ReportView({ response, fileLabel = 'GramVyapaar_Report' 
     <div>
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
         <button className="btn btn-primary" onClick={downloadPDF} disabled={isDownloading}>
-          {isDownloading ? 'Generating PDF...' : '📄 Download PDF Report'}
+          {isDownloading ? t(language, 'report.generatingPdf') : t(language, 'report.downloadPdf')}
         </button>
       </div>
 
       <div ref={reportRef} style={{ background: 'var(--color-bg)', padding: '20px', borderRadius: '16px' }}>
-        <FeasibilityCard report={response.feasibility_report} />
-        <RevenueProjectionCard projection={response.feasibility_report.revenue_projection} />
-        <FlowchartView steps={response.feasibility_report.journey_flowchart} />
-        <FinancialPlanCard plan={response.financial_plan} />
+        <FeasibilityCard report={response.feasibility_report} language={language} />
+        <RevenueProjectionCard projection={response.feasibility_report.revenue_projection} language={language} />
+        <FlowchartView steps={response.feasibility_report.journey_flowchart} language={language} />
+        <FinancialPlanCard plan={response.financial_plan} language={language} />
         <div className="disclaimer" style={{ marginTop: 24 }}>
           {response.disclaimer}
         </div>
