@@ -1,3 +1,5 @@
+import SchemesList from './SchemesList.jsx'
+
 function formatINR(n) {
   return `₹${Number(n).toLocaleString('en-IN')}`
 }
@@ -98,6 +100,8 @@ export default function FinancialPlanCard({ plan }) {
           </div>
         </>
       )}
+
+      <SchemesList schemes={plan.all_schemes} />
     </div>
   )
 }
