@@ -19,6 +19,10 @@ const initialForm = {
   applicant_age: '',
   is_first_time_entrepreneur: true,
   language: 'en',
+  business_stage: 'idea',
+  legal_structure: 'none_informal',
+  current_monthly_revenue: '',
+  business_idea_description: '',
 }
 
 /**
@@ -47,6 +51,8 @@ export default function Advisor({ mode }) {
         available_margin_capital: Number(form.available_margin_capital),
         applicant_age: form.applicant_age ? Number(form.applicant_age) : null,
         business_name: isPersonal ? (form.business_name || null) : null,
+        current_monthly_revenue: form.current_monthly_revenue ? Number(form.current_monthly_revenue) : null,
+        business_idea_description: form.business_idea_description || null,
       }
       const data = await getAdvisory(payload, isPersonal ? token : null)
       setResult(data)
