@@ -98,7 +98,7 @@ def compute_project_cost_and_loan(available_margin_capital: float) -> Tuple[floa
     return project_cost, max_loan_uncapped
 
 
-def select_scheme(project_cost: float) -> Tuple[SchemeName, float, float, int, int, list, str]:
+def select_scheme(project_cost: float, lang: str = "en") -> Tuple[SchemeName, float, float, int, int, list, str]:
     """
     Logic A: project_cost <= 1.40L               -> Micro Finance Scheme
     Logic B: 1.40L < project_cost <= 10.00L       -> SUVIDHA Loan Scheme
@@ -141,12 +141,7 @@ def select_scheme(project_cost: float) -> Tuple[SchemeName, float, float, int, i
             UTKARSH_SOURCE_URL,
         )
 
-    warnings.append(
-        "Calculated project cost exceeds Rs. 50,00,000, which is beyond the "
-        "Micro Finance, SUVIDHA, and UTKARSH scheme ceilings. This applicant "
-        "should be referred to a different (larger-ticket) financing scheme, "
-        "outside this tool's current scope."
-    )
+    warnings.append(i18n.scheme_ceiling_exceeded_warning(lang))
     return (
         SchemeName.not_eligible,
         0.0,
@@ -248,7 +243,7 @@ def build_financial_plan(
 ) -> FinancialPlan:
     lang = i18n.normalize_language(language)
     project_cost, _ = compute_project_cost_and_loan(available_margin_capital)
-    scheme, rate, loan_cap, tenure_years, moratorium_months, warnings, source_url = select_scheme(project_cost)
+    scheme, rate, loan_cap, tenure_years, moratorium_months, warnings, source_url = select_scheme(project_cost, lang)
 
     uncapped_loan = project_cost * (LOAN_PERCENTAGE / 100.0)
     loan_amount = min(uncapped_loan, loan_cap) if loan_cap else 0.0

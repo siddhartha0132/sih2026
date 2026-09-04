@@ -265,6 +265,33 @@ def not_eligible_explanation(lang: str) -> str:
     )
 
 
+def scheme_ceiling_exceeded_warning(lang: str) -> str:
+    if lang == "hi":
+        return (
+            "गणना की गई परियोजना लागत Rs. 50,00,000 से अधिक है, जो Micro Finance, SUVIDHA "
+            "और UTKARSH योजनाओं की सीमा से बाहर है। इस आवेदक को एक अलग (बड़ी राशि वाली) "
+            "वित्तपोषण योजना की ओर निर्देशित किया जाना चाहिए, जो इस टूल के मौजूदा दायरे से बाहर है।"
+        )
+    if lang == "kn":
+        return (
+            "ಲೆಕ್ಕಹಾಕಿದ ಯೋಜನಾ ವೆಚ್ಚವು Rs. 50,00,000 ಮೀರಿದೆ, ಇದು Micro Finance, SUVIDHA "
+            "ಮತ್ತು UTKARSH ಯೋಜನೆಗಳ ಮಿತಿಯನ್ನು ಮೀರಿದೆ. ಈ ಅರ್ಜಿದಾರರನ್ನು ಬೇರೆ (ದೊಡ್ಡ ಮೊತ್ತದ) "
+            "ಹಣಕಾಸು ಯೋಜನೆಗೆ ಶಿಫಾರಸು ಮಾಡಬೇಕು, ಇದು ಈ ಟೂಲ್‌ನ ಪ್ರಸ್ತುತ ವ್ಯಾಪ್ತಿಯ ಹೊರಗಿದೆ."
+        )
+    if lang == "te":
+        return (
+            "లెక్కించిన ప్రాజెక్ట్ వ్యయం Rs. 50,00,000 ను మించింది, ఇది Micro Finance, SUVIDHA "
+            "మరియు UTKARSH పథకాల పరిమితిని మించినది. ఈ దరఖాస్తుదారుని వేరే (పెద్ద మొత్తం) "
+            "ఆర్థిక పథకానికి సూచించాలి, ఇది ఈ టూల్ యొక్క ప్రస్తుత పరిధికి వెలుపల ఉంది."
+        )
+    return (
+        "Calculated project cost exceeds Rs. 50,00,000, which is beyond the "
+        "Micro Finance, SUVIDHA, and UTKARSH scheme ceilings. This applicant "
+        "should be referred to a different (larger-ticket) financing scheme, "
+        "outside this tool's current scope."
+    )
+
+
 def narrative_summary(
     lang: str, category: str, village: str, district: str, score: int,
     competitors_nearby: int, density: str, lit_pct: float, mobile_pct: float,
