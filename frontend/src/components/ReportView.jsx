@@ -3,6 +3,8 @@ import { jsPDF } from 'jspdf'
 import html2canvas from 'html2canvas'
 import FeasibilityCard from './FeasibilityCard.jsx'
 import FinancialPlanCard from './FinancialPlanCard.jsx'
+import RevenueProjectionCard from './RevenueProjectionCard.jsx'
+import FlowchartView from './FlowchartView.jsx'
 
 /**
  * Shared renderer for one AdvisoryResponse — used by the live Advisor flow
@@ -49,6 +51,8 @@ export default function ReportView({ response, fileLabel = 'GramVyapaar_Report' 
 
       <div ref={reportRef} style={{ background: 'var(--color-bg)', padding: '20px', borderRadius: '16px' }}>
         <FeasibilityCard report={response.feasibility_report} />
+        <RevenueProjectionCard projection={response.feasibility_report.revenue_projection} />
+        <FlowchartView steps={response.feasibility_report.journey_flowchart} />
         <FinancialPlanCard plan={response.financial_plan} />
         <div className="disclaimer" style={{ marginTop: 24 }}>
           {response.disclaimer}
