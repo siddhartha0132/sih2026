@@ -79,6 +79,23 @@ def _confidence_from_source(source_str: str) -> ConfidenceLevel:
     return ConfidenceLevel.medium
 
 
+def _display_category(req: AdvisoryRequest) -> str:
+    """
+    Human-readable category name for narrative text. business_category_other
+    is meant to fill this in whenever business_category == 'Other', but the
+    field is optional at the API/form level, so a request can arrive with
+    category='Other' and no free-text description. Falling back to the raw
+    enum value in that case renders as the grammatically broken "A Other
+    business in..." and tells the reader nothing about the actual business.
+    Fall back to a safe generic phrase instead.
+    """
+    if req.business_category_other:
+        return req.business_category_other
+    if req.business_category.value == "Other":
+        return "small"
+    return req.business_category.value
+
+
 def _build_market_reach(req: AdvisoryRequest) -> MarketReach:
     pop = market_data.get_population_estimate(
         req.village, req.block or "", req.district, DEFAULT_RADIUS_KM
@@ -127,7 +144,7 @@ def _build_pricing(req: AdvisoryRequest, project_cost: float) -> PricingRecommen
 
     rationale = (
         f"Based on real {commodity} mandi prices ({scope}: Rs. {mandi_rate}/quintal from Agmarknet), "
-        f"a sustainable selling price band for {req.business_category.value} is Rs. {low}–{high} {unit}. "
+        f"a sustainable selling price band for {_display_category(req)} is Rs. {low}–{high} {unit}. "
         f"The 30-day market price trend is {trend_dir} {abs(trend)}% — "
         f"{'a favourable signal for new entrants' if trend >= 0 else 'factor this into your working-capital buffer'}."
     )
@@ -454,7 +471,7 @@ def _narrative_summary(
     pricing: PricingRecommendation,
     profile: Dict,
 ) -> str:
-    category = req.business_category_other or req.business_category.value
+    category = _display_category(req)
     lit_pct  = round(profile.get("literacy_rate", 0.65) * 100, 1)
     mobile_p = round(profile.get("mobile_penetration", 0.55) * 100, 1)
     density  = competitor.density_rating.lower()
@@ -542,7 +559,7 @@ def build_feasibility_report(req: AdvisoryRequest, project_cost: float) -> Feasi
     competitor   = _build_competitor_mapping(req)
     pricing      = _build_pricing(req, project_cost)
 
-    category = req.business_category_other or req.business_category.value
+    category = _display_category(req)
     opportunity = _build_opportunity_analysis(req, competitor, profile)
     swot        = _build_swot(req, competitor, project_cost, profile)
     threats     = _build_threats(req, competitor)
