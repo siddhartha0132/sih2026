@@ -193,8 +193,13 @@ export default function InputForm({ form, setForm, onSubmit, loading, showBusine
       {form.business_category === 'Other' && (
         <div className="field">
           <label htmlFor="category_other">Describe your business</label>
-          <input id="category_other" value={form.business_category_other}
-            onChange={(e) => update('business_category_other', e.target.value)} />
+          <input id="category_other" required value={form.business_category_other}
+            onChange={(e) => update('business_category_other', e.target.value)}
+            placeholder="e.g. Mobile repair shop" />
+          <span className="field-hint">
+            Since "Other" doesn't map to one of our standard categories, tell us in a few
+            words what it is — this is what shows up in your report instead of just "Other".
+          </span>
         </div>
       )}
 
