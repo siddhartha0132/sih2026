@@ -16,29 +16,39 @@ from app.schemas import BusinessCategory, ConfidenceLevel, IdeaSuggestionRespons
 CATEGORY_KEYWORDS: Dict[BusinessCategory, List[str]] = {
     BusinessCategory.dairy: [
         "milk", "doodh", "dairy", "cow", "gaay", "buffalo", "bhains", "ghee", "curd", "dahi", "paneer",
+        # Devanagari (Hindi script) — a Hindi-language user typing natively, not just
+        # romanized Hinglish, must match too.
+        "दूध", "डेयरी", "गाय", "भैंस", "भेंस", "घी", "दही", "पनीर",
     ],
     BusinessCategory.retail: [
         "kirana", "shop", "dukan", "store", "grocery", "general store", "provisions", "supermarket",
+        "किराना", "दुकान", "परचून", "जनरल स्टोर",
     ],
     BusinessCategory.textiles: [
         "cloth", "saree", "sari", "fabric", "kapda", "weaving", "loom", "textile", "garment shop",
+        "कपड़ा", "साड़ी", "बुनाई", "करघा", "वस्त्र",
     ],
     BusinessCategory.food_processing: [
         "pickle", "achar", "papad", "snack", "bakery", "namkeen", "spices", "masala", "food processing",
         "jam", "juice", "sweets", "mithai",
+        "अचार", "पापड़", "नमकीन", "मसाला", "मिठाई", "बेकरी",
     ],
     BusinessCategory.poultry: [
         "chicken", "poultry", "murgi", "egg", "anda", "hatchery", "broiler",
+        "मुर्गी", "मुर्गा", "अंडा", "पोल्ट्री",
     ],
     BusinessCategory.handicrafts: [
         "handicraft", "handmade", "pottery", "matka", "craft", "embroidery", "basket", "bamboo",
         "wood carving", "artisan",
+        "हस्तशिल्प", "मिट्टी के बर्तन", "मटका", "कढ़ाई", "टोकरी", "बांस",
     ],
     BusinessCategory.agri_input_store: [
         "seed", "beej", "fertilizer", "khad", "pesticide", "agri input", "farm input", "agriculture shop",
+        "बीज", "खाद", "कीटनाशक", "उर्वरक", "खेती की दुकान",
     ],
     BusinessCategory.tailoring: [
         "tailor", "tailoring", "stitching", "silai", "boutique", "sewing", "darzi",
+        "सिलाई", "दर्जी", "बुटीक",
     ],
 }
 
