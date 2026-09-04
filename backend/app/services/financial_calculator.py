@@ -193,7 +193,10 @@ def build_repayment_schedule(
     balance = loan_amount
     total_interest = 0.0
 
-    # Moratorium quarters — no cash collected, interest accrues and capitalizes.
+    # Moratorium quarters — no cash collected, interest accrues and capitalizes
+    # into the principal. This interest is not collected now, but it is real
+    # interest the applicant will pay later (folded into the amortizing
+    # principal), so it must still count toward total_interest/total_repayable.
     for q in range(1, moratorium_quarters + 1):
         interest_accrued = balance * quarterly_rate
         new_balance = balance + interest_accrued
@@ -208,6 +211,7 @@ def build_repayment_schedule(
             )
         )
         balance = new_balance
+        total_interest += interest_accrued
 
     # Amortizing quarters.
     for q in range(1, repayment_quarters + 1):
