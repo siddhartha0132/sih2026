@@ -1,11 +1,50 @@
+import { useState } from 'react'
+import { getIdeaSuggestion } from '../api/client.js'
+
 const CATEGORIES = [
   'Dairy', 'Retail', 'Textiles', 'Food Processing', 'Poultry',
   'Handicrafts', 'Agri Input Store', 'Tailoring', 'Other',
 ]
 
+const LANGUAGES = [
+  { code: 'en', label: 'English' },
+  { code: 'hi', label: 'हिंदी (Hindi)' },
+]
+
 export default function InputForm({ form, setForm, onSubmit, loading, showBusinessName = false }) {
+  const [ideaText, setIdeaText] = useState('')
+  const [ideaLoading, setIdeaLoading] = useState(false)
+  const [ideaResult, setIdeaResult] = useState(null)
+  const [ideaError, setIdeaError] = useState(null)
+
   function update(key, value) {
     setForm((prev) => ({ ...prev, [key]: value }))
+  }
+
+  async function handleIdeaSuggest() {
+    if (!ideaText.trim()) return
+    setIdeaLoading(true)
+    setIdeaError(null)
+    setIdeaResult(null)
+    try {
+      const suggestion = await getIdeaSuggestion({
+        business_idea_description: ideaText,
+        available_margin_capital: form.available_margin_capital ? Number(form.available_margin_capital) : null,
+      })
+      setIdeaResult(suggestion)
+      update('business_category', suggestion.detected_business_category)
+      if (suggestion.detected_business_category === 'Other' && suggestion.detected_business_category_other) {
+        update('business_category_other', suggestion.detected_business_category_other)
+      }
+      if (!form.available_margin_capital) {
+        update('available_margin_capital', String(suggestion.suggested_starting_margin_capital))
+      }
+      update('business_idea_description', ideaText)
+    } catch (err) {
+      setIdeaError(err.message || 'Could not read your idea right now — please pick a category below instead.')
+    } finally {
+      setIdeaLoading(false)
+    }
   }
 
   return (
@@ -13,6 +52,14 @@ export default function InputForm({ form, setForm, onSubmit, loading, showBusine
       className="panel"
       onSubmit={(e) => { e.preventDefault(); onSubmit() }}
     >
+      <div className="field">
+        <label htmlFor="language">Answer in which language? / किस भाषा में जवाब चाहिए?</label>
+        <select id="language" value={form.language}
+          onChange={(e) => update('language', e.target.value)}>
+          {LANGUAGES.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}
+        </select>
+      </div>
+
       {showBusinessName && (
         <div className="field">
           <label htmlFor="business_name">Name this business plan</label>
@@ -26,7 +73,25 @@ export default function InputForm({ form, setForm, onSubmit, loading, showBusine
         </div>
       )}
 
-      <h3>1. Where are you starting your business?</h3>
+      <h3>Not sure what to call your idea? Describe it in your own words</h3>
+      <div className="idea-box">
+        <textarea
+          className="idea-textarea"
+          rows={3}
+          value={ideaText}
+          onChange={(e) => setIdeaText(e.target.value)}
+          placeholder="e.g. I have 2 buffaloes and want to sell milk and ghee in my village"
+        />
+        <button type="button" className="btn btn-secondary" onClick={handleIdeaSuggest} disabled={ideaLoading || !ideaText.trim()}>
+          {ideaLoading ? 'Reading your idea…' : '✨ Suggest category for me'}
+        </button>
+        {ideaResult && (
+          <div className="idea-suggestion-note">{ideaResult.explanation}</div>
+        )}
+        {ideaError && <div className="idea-suggestion-note idea-suggestion-error">{ideaError}</div>}
+      </div>
+
+      <h3 style={{ marginTop: 28 }}>1. Where are you starting your business?</h3>
       <div className="field-row">
         <div className="field">
           <label htmlFor="village">Village / Town</label>
@@ -57,7 +122,56 @@ export default function InputForm({ form, setForm, onSubmit, loading, showBusine
           onChange={(e) => update('pincode', e.target.value)} placeholder="6-digit PIN" />
       </div>
 
-      <h3 style={{ marginTop: 28 }}>2. What can you contribute?</h3>
+      <h3 style={{ marginTop: 28 }}>2. Tell us where you're starting from</h3>
+      <p className="field-hint" style={{ marginTop: -8, marginBottom: 12 }}>
+        There's no wrong answer here — this just helps us give you the right kind of advice.
+      </p>
+      <div className="field">
+        <label htmlFor="business_stage">Right now, this business is...</label>
+        <select id="business_stage" value={form.business_stage}
+          onChange={(e) => update('business_stage', e.target.value)}>
+          <option value="idea">Just an idea in my head</option>
+          <option value="researching">Something I'm looking into / researching</option>
+          <option value="ongoing">Already running — I do this today</option>
+        </select>
+      </div>
+
+      {form.business_stage === 'ongoing' && (
+        <div className="field">
+          <label htmlFor="current_monthly_revenue">
+            Roughly how much money does it bring in per month right now? (₹)
+          </label>
+          <input id="current_monthly_revenue" type="number" min="0"
+            value={form.current_monthly_revenue}
+            onChange={(e) => update('current_monthly_revenue', e.target.value)}
+            placeholder="e.g. 15000" />
+          <span className="field-hint">
+            A rough number is fine — this helps us base your report on your real numbers
+            instead of a general estimate.
+          </span>
+        </div>
+      )}
+
+      <div className="field">
+        <label htmlFor="legal_structure">How is it (or will it be) set up?</label>
+        <select id="legal_structure" value={form.legal_structure}
+          onChange={(e) => update('legal_structure', e.target.value)}>
+          <option value="none_informal">Just me / my family — nothing formal yet</option>
+          <option value="proprietorship">Registered in my own name (proprietorship)</option>
+          <option value="shg_or_cooperative">Part of a Self-Help Group / cooperative</option>
+          <option value="partnership">Partnership with one or more people</option>
+          <option value="private_limited">Private Limited Company</option>
+          <option value="llp">LLP</option>
+          <option value="opc">One Person Company</option>
+          <option value="not_sure">Not sure yet</option>
+        </select>
+        <span className="field-hint">
+          Most rural businesses start with "nothing formal yet" — that's completely normal
+          and won't stop you from qualifying for a scheme.
+        </span>
+      </div>
+
+      <h3 style={{ marginTop: 28 }}>3. What can you contribute?</h3>
       <div className="field">
         <label htmlFor="margin">Available margin capital (₹)</label>
         <input id="margin" type="number" min="1" required value={form.available_margin_capital}
@@ -68,7 +182,7 @@ export default function InputForm({ form, setForm, onSubmit, loading, showBusine
         </span>
       </div>
 
-      <h3 style={{ marginTop: 28 }}>3. What business are you planning?</h3>
+      <h3 style={{ marginTop: 28 }}>4. What business are you planning?</h3>
       <div className="field">
         <label htmlFor="category">Business category</label>
         <select id="category" value={form.business_category}
