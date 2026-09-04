@@ -42,13 +42,14 @@ from app.schemas import (
     CompetitorMapping,
     ConfidenceLevel,
     FeasibilityReport,
+    FlowchartStep,
     MarketReach,
     OpportunityAnalysis,
     PricingRecommendation,
     SWOTAnalysis,
     ThreatFlag,
 )
-from app.services import market_data
+from app.services import i18n, market_data, revenue_estimator
 
 DEFAULT_RADIUS_KM = 7.5
 
@@ -227,6 +228,14 @@ def _build_swot(
         "Working capital buffer is limited at this project-cost scale — any 1–2 month demand dip "
         "could stress repayment cash flows.",
     ]
+    legal = req.legal_structure.value if req.legal_structure else "none_informal"
+    if legal in ("none_informal", "not_sure"):
+        weaknesses.append(
+            "Currently no formal legal structure — this is completely normal at this stage and "
+            "does not block scheme eligibility, but registering as a sole proprietorship (or "
+            "joining an SHG) once revenue starts will make future bank dealings and Udyam "
+            "registration smoother."
+        )
 
     opportunities = [
         "Government concessional credit (PMEGP/MUDRA) significantly reduces cost of capital "
@@ -449,6 +458,16 @@ def _narrative_summary(
     lit_pct  = round(profile.get("literacy_rate", 0.65) * 100, 1)
     mobile_p = round(profile.get("mobile_penetration", 0.55) * 100, 1)
     density  = competitor.density_rating.lower()
+    lang = i18n.normalize_language(req.language)
+
+    hi_summary = i18n.narrative_summary(
+        lang, category, req.village, req.district, score,
+        competitor.estimated_similar_businesses_nearby, density, lit_pct, mobile_p,
+        pricing.suggested_price_range_min, pricing.suggested_price_range_max, pricing.unit,
+    )
+    if hi_summary is not None:
+        stage_note = _business_stage_narrative_note(req, lang)
+        return f"{hi_summary} {stage_note}".strip()
 
     verdict = (
         "a strong opportunity" if score >= 65 else
@@ -456,7 +475,7 @@ def _narrative_summary(
         "a high-risk entry — consider location or category adjustments"
     )
 
-    return (
+    base = (
         f"A {category} business in {req.village}, {req.district} scores {score}/100 on the "
         f"GramVyapaar Opportunity Index — {verdict}. "
         f"The district has {competitor.estimated_similar_businesses_nearby:,} similar competing businesses in a 7.5 km radius, "
@@ -470,6 +489,49 @@ def _narrative_summary(
         f"Competition Headroom: {breakdown['competition_headroom']}/25 | "
         f"Sector Fit: {breakdown['sector_fit_score']}/20 | "
         f"Infrastructure: {breakdown['infrastructure_score']}/10."
+    )
+    stage_note = _business_stage_narrative_note(req, lang)
+    return f"{base} {stage_note}".strip()
+
+
+def _business_stage_narrative_note(req: AdvisoryRequest, lang: str) -> str:
+    """
+    Adjusts the tone based on whether this is a fresh idea, something being
+    researched, or an already-running business — per the explicit request to
+    ask about business stage and let it shape the tone of the answer, not
+    just the numbers.
+    """
+    stage = (req.business_stage.value if req.business_stage else "idea")
+    if lang == "hi":
+        if stage == "ongoing":
+            return (
+                "चूंकि आप हॹले से यह व्यवसाय चला रहे हैं, यह रिपोर्ट आपकी मौजूदा आमदनी को आधार "
+                "मानकर विस्तार पर केंद्रित है, न कि शुरुआत पर।"
+            )
+        if stage == "researching":
+            return (
+                "चूंकि आप अभी सिर्फ जानारी जुटा रहे हैं, इस रिपोर्ट को अंतिम निर्णय लेने से पहले "
+                "एक शुरुआती मार्गदर्शक की तरह इस्तेमाल करें — पूंजी लगाने से पहले स्थानीय बाजार में जाकर पुष्टि करें।"
+            )
+        return (
+            "चूंकि यह अभी सिर्फ एक विचार है, पूंजी लगाने से पहले इस रिपोर्ट की हर धारणा को अपने "
+            "गांव में 3-5 लोगों से बात करके जरूर जांच लें।"
+        )
+    if stage == "ongoing":
+        return (
+            "Since you already run this business, this report is anchored on your existing "
+            "numbers and focused on what expansion could realistically look like — not on "
+            "whether to start at all."
+        )
+    if stage == "researching":
+        return (
+            "Since you're still researching, treat this report as an early-stage guide rather "
+            "than a final decision — validate its assumptions against your own village before "
+            "putting in any capital."
+        )
+    return (
+        "Since this is currently just an idea, validate every assumption in this report by "
+        "talking to 3-5 real people in your village before committing any capital."
     )
 
 
@@ -499,16 +561,27 @@ def build_feasibility_report(req: AdvisoryRequest, project_cost: float) -> Feasi
     else:
         matched_scheme_name = "no scheme in this tool's scope (project cost exceeds Rs. 50 Lakh)"
 
-    next_steps = [
-        f"Visit the nearest Common Service Centre (CSC) or RSETI office in {req.district} with this report.",
-        "Prepare: Aadhaar, PAN, address proof, and margin-money bank statement.",
-        f"Apply under the {matched_scheme_name} — project cost Rs. {project_cost:,.0f}. "
-        f"See the Financial Plan section above for the exact terms and official source link.",
-        f"Talk to 3–5 local {category.lower()} businesses to validate the Rs. "
-        f"{pricing.suggested_price_range_min}–{pricing.suggested_price_range_max} "
-        f"{pricing.unit} price assumption before finalising your business plan.",
-        "Register on the Udyam Portal (udyamregistration.gov.in) once operational — "
-        "it unlocks priority lending and government scheme benefits.",
+    lang = i18n.normalize_language(req.language)
+    next_steps = i18n.actionable_next_steps(
+        lang, req.district, matched_scheme_name, project_cost, category,
+        pricing.suggested_price_range_min, pricing.suggested_price_range_max, pricing.unit,
+    )
+
+    revenue_projection = revenue_estimator.build_revenue_projection(
+        category=req.business_category.value,
+        project_cost=project_cost,
+        consumer_base=market_reach.estimated_consumer_base,
+        competitors=competitor.estimated_similar_businesses_nearby,
+        current_monthly_revenue=(
+            req.current_monthly_revenue
+            if req.business_stage == "ongoing" or (req.business_stage and req.business_stage.value == "ongoing")
+            else None
+        ),
+    )
+
+    stage_value = req.business_stage.value if req.business_stage else "idea"
+    journey_flowchart = [
+        FlowchartStep(**step) for step in i18n.flowchart_steps(lang, stage_value)
     ]
 
     return FeasibilityReport(
@@ -522,4 +595,6 @@ def build_feasibility_report(req: AdvisoryRequest, project_cost: float) -> Feasi
         pricing=pricing,
         narrative_summary=narrative,
         actionable_next_steps=next_steps,
+        revenue_projection=revenue_projection,
+        journey_flowchart=journey_flowchart,
     )
