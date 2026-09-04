@@ -14,43 +14,21 @@ export default function Landing() {
 
   return (
     <>
-      <section className="section container">
-        <h1 dangerouslySetInnerHTML={{ __html: t(language, 'landing.heroHeading') }} />
-        <p>
-          {t(language, 'landing.heroParagraph')}
-        </p>
-      </section>
-
-      <section className="section container">
-        <h2>{t(language, 'landing.howToUse')}</h2>
-        <div className="swot-grid" style={{ marginTop: 20 }}>
-          <div className="swot-box">
-            <h4>{t(language, 'landing.personalTitle')}</h4>
-            <p>
-              {t(language, 'landing.personalDesc')}
-            </p>
-            <div style={{ marginTop: 16 }}>
-              <button className="btn btn-primary" onClick={choosePersonal}>
-                {isLoggedIn ? t(language, 'landing.goToMyPlan') : t(language, 'landing.loginSignup')}
-              </button>
-            </div>
-          </div>
-          <div className="swot-box">
-            <h4>{t(language, 'landing.openTitle')}</h4>
-            <p>
-              {t(language, 'landing.openDesc')}
-            </p>
-            <div style={{ marginTop: 16 }}>
-              <Link to="/advisor/open" className="btn btn-secondary">
-                {t(language, 'landing.useWithoutAccount')}
-              </Link>
-            </div>
+      <section className="hero-split container">
+        <div className="hero-copy">
+          <h1 dangerouslySetInnerHTML={{ __html: t(language, 'landing.heroHeading') }} />
+          <p>{t(language, 'landing.heroParagraph')}</p>
+          <div className="hero-ctas">
+            <button className="btn btn-primary" onClick={choosePersonal}>
+              {isLoggedIn ? t(language, 'landing.goToMyPlan') : t(language, 'landing.loginSignup')}
+            </button>
+            <Link to="/advisor/open" className="btn btn-secondary">
+              {t(language, 'landing.useWithoutAccount')}
+            </Link>
           </div>
         </div>
-      </section>
 
-      <section className="section container">
-        <div className="stat-row">
+        <div className="hero-stats-card">
           <div className="stat">
             <div className="stat-value">10%</div>
             <div className="stat-label">{t(language, 'landing.marginContribution')}</div>
@@ -62,6 +40,28 @@ export default function Landing() {
           <div className="stat">
             <div className="stat-value">{t(language, 'landing.schemesChecked')}</div>
             <div className="stat-label">{t(language, 'landing.schemesCheckedDesc')}</div>
+          </div>
+        </div>
+      </section>
+
+      <section className="section container">
+        <div className="section-head">
+          <h2>{t(language, 'landing.howToUse')}</h2>
+        </div>
+        <div className="use-case-grid">
+          <div className="use-case-card">
+            <h4>{t(language, 'landing.personalTitle')}</h4>
+            <p>{t(language, 'landing.personalDesc')}</p>
+            <button className="btn btn-primary" onClick={choosePersonal}>
+              {isLoggedIn ? t(language, 'landing.goToMyPlan') : t(language, 'landing.loginSignup')}
+            </button>
+          </div>
+          <div className="use-case-card">
+            <h4>{t(language, 'landing.openTitle')}</h4>
+            <p>{t(language, 'landing.openDesc')}</p>
+            <Link to="/advisor/open" className="btn btn-secondary">
+              {t(language, 'landing.useWithoutAccount')}
+            </Link>
           </div>
         </div>
       </section>
