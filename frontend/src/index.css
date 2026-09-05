@@ -153,9 +153,12 @@ a:hover { color: var(--tan); }
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 16px;
   padding: 16px 24px;
-  max-width: var(--max-width);
+  max-width: 1520px;
   margin: 0 auto;
+  flex-wrap: nowrap;
+  overflow-x: auto;
 }
 .brand {
   font-family: var(--font-display);
@@ -167,6 +170,8 @@ a:hover { color: var(--tan); }
   align-items: center;
   gap: 10px;
   letter-spacing: -0.01em;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .brand-mark {
   width: 14px;
@@ -174,9 +179,24 @@ a:hover { color: var(--tan); }
   border-radius: 50%;
   background: linear-gradient(155deg, var(--sage), var(--sage-deep));
   display: inline-block;
+  flex-shrink: 0;
   box-shadow: 0 0 10px rgba(116, 135, 100, 0.45);
 }
-.tagline { color: var(--color-ink-soft); font-size: 0.95rem; font-weight: 500; }
+.tagline { color: var(--color-ink-soft); font-size: 0.95rem; font-weight: 500; white-space: nowrap; }
+.site-header-nav {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 1;
+  white-space: nowrap;
+  min-width: 0;
+}
+@media (max-width: 1180px) {
+  .site-header-nav .tagline { display: none; }
+}
+@media (max-width: 640px) {
+  .brand span:not(.brand-mark) { display: none; }
+}
 
 main { flex: 1; display: flex; flex-direction: column; }
 

@@ -38,9 +38,9 @@ function Header() {
       <div className="site-header-inner">
         <Link to="/" className="brand">
           <span className="brand-mark" />
-          GramVyapaar AI
+          <span>GramVyapaar AI</span>
         </Link>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+        <div className="site-header-nav">
           <span className="tagline">{t(language, 'app.tagline')}</span>
           <LanguageSwitcher />
           {isLoggedIn ? (
