@@ -87,11 +87,20 @@ def _likely_scheme_hint(margin_capital: float, lang: str = "en") -> str:
 def suggest_from_idea(description: str, available_margin_capital: float = None, language: str = "en") -> IdeaSuggestionResponse:
     lang = i18n.normalize_language(language)
     text = description.lower()
-    scores: List[Tuple[BusinessCategory, int, List[str]]] = []
+    # Score by keyword *specificity* (total matched character length), not raw
+    # match count. A generic word like "shop" or "store" appears in almost any
+    # retail-ish description and would otherwise out-rank a more specific,
+    # longer keyword like "cloth" or "tailor" whenever both match once - e.g.
+    # "clothes shop" used to tie Retail("shop") vs Textiles("cloth") at 1
+    # match each, and Retail won on dict-insertion order alone. Weighting by
+    # matched keyword length fixes that: "cloth" (5 chars) outweighs "shop"
+    # (4 chars), so the more specific category wins.
+    scores: List[Tuple[BusinessCategory, int, int, List[str]]] = []
     for category, keywords in CATEGORY_KEYWORDS.items():
         matched = [kw for kw in keywords if re.search(re.escape(kw.lower()), text)]
         if matched:
-            scores.append((category, len(matched), matched))
+            specificity = sum(len(kw) for kw in matched)
+            scores.append((category, specificity, len(matched), matched))
 
     if not scores:
         margin = available_margin_capital or CATEGORY_STARTING_MARGIN[BusinessCategory.other]
@@ -110,8 +119,8 @@ def suggest_from_idea(description: str, available_margin_capital: float = None, 
             likely_scheme_hint=_likely_scheme_hint(margin, lang),
         )
 
-    scores.sort(key=lambda x: x[1], reverse=True)
-    best_category, match_count, matched_keywords = scores[0]
+    scores.sort(key=lambda x: (x[1], x[2]), reverse=True)
+    best_category, _specificity, match_count, matched_keywords = scores[0]
     margin = available_margin_capital or CATEGORY_STARTING_MARGIN[best_category]
     confidence = ConfidenceLevel.high if match_count >= 2 else ConfidenceLevel.medium
 
