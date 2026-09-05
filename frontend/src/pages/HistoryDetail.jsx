@@ -46,6 +46,7 @@ export default function HistoryDetail() {
               response={entry.response}
               language={language}
               fileLabel={`GramVyapaar_${entry.request.district}_${entry.request.business_category}_${entry.id}`}
+              businessCategory={entry.request.business_category === 'Other' ? entry.request.business_category_other : entry.request.business_category}
             />
           </div>
         </>

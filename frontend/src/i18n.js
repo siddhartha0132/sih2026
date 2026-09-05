@@ -123,6 +123,16 @@ export const STRINGS = {
     'report.downloadPdf': '📄 Download PDF Report',
     'report.pdfFailed': 'Failed to download PDF. Please try again.',
 
+    // LocalContactsCard
+    'contacts.title': 'Local contacts to get started',
+    'contacts.subtitle': 'People you may need to call while starting or running this business — for raw materials, distribution, retail, and bulk orders.',
+    'contacts.disclaimer': 'These are sample contacts for demonstration only. Replace them with real suppliers, distributors, and retailers in your own area before using this plan.',
+    'contacts.roleRawMaterial': 'Raw material supplier',
+    'contacts.roleDistributor': 'Distributor / collection point',
+    'contacts.roleRetailer': 'Retailer / local outlet',
+    'contacts.roleClient': 'Potential bulk client',
+    'contacts.callLabel': 'Call',
+
     // InputForm
     'form.languageLabel': 'Answer in which language? / किस भाषा में जवाब चाहिए?',
     'form.businessNameLabel': 'Name this business plan',
@@ -321,6 +331,16 @@ export const STRINGS = {
     'report.downloadPdf': '📄 PDF रिपोर्ट डाउनलोड करें',
     'report.pdfFailed': 'PDF डाउनलोड करने में विफल। कृपया फिर से प्रयास करें।',
 
+    // LocalContactsCard
+    'contacts.title': 'शुरुआत करने के लिए स्थानीय संपर्क',
+    'contacts.subtitle': 'यह व्यवसाय शुरू करते या चलाते समय जिन्हें आपको फोन करने की आवश्यकता हो सकती है — कच्चा माल, वितरण, खुदरा बिक्री और थोक ऑर्डर के लिए।',
+    'contacts.disclaimer': 'ये केवल प्रदर्शन के लिए नमूना संपर्क हैं। इस योजना का उपयोग करने से पहले इन्हें अपने क्षेत्र के वास्तविक आपूर्तिकर्ताओं, वितरकों और खुदरा विक्रेताओं से बदल दें।',
+    'contacts.roleRawMaterial': 'कच्चा माल आपूर्तिकर्ता',
+    'contacts.roleDistributor': 'वितरक / संग्रह केंद्र',
+    'contacts.roleRetailer': 'खुदरा विक्रेता / स्थानीय दुकान',
+    'contacts.roleClient': 'संभावित थोक ग्राहक',
+    'contacts.callLabel': 'कॉल करें',
+
     'form.languageLabel': 'Answer in which language? / किस भाषा में जवाब चाहिए?',
     'form.businessNameLabel': 'इस व्यवसाय योजना को नाम दें',
     'form.businessNamePlaceholder': 'जैसे मीना की डेयरी',
@@ -512,6 +532,16 @@ export const STRINGS = {
     'report.downloadPdf': '📄 PDF ವರದಿ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ',
     'report.pdfFailed': 'PDF ಡೌನ್‌ಲೋಡ್ ವಿಫಲವಾಗಿದೆ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.',
 
+    // LocalContactsCard
+    'contacts.title': 'ಪ್ರಾರಂಭಿಸಲು ಸ್ಥಳೀಯ ಸಂಪರ್ಕಗಳು',
+    'contacts.subtitle': 'ಈ ವ್ಯವಹಾರವನ್ನು ಪ್ರಾರಂಭಿಸುವಾಗ ಅಥವಾ ನಡೆಸುವಾಗ ನೀವು ಕರೆ ಮಾಡಬೇಕಾದ ಜನರು — ಕಚ್ಚಾ ವಸ್ತು, ವಿತರಣೆ, ಚಿಲ್ಲರೆ ಮಾರಾಟ ಮತ್ತು ಬೃಹತ್ ಆರ್ಡರ್‌ಗಳಿಗಾಗಿ.',
+    'contacts.disclaimer': 'ಇವು ಕೇವಲ ಪ್ರದರ್ಶನಕ್ಕಾಗಿ ಮಾದರಿ ಸಂಪರ್ಕಗಳು. ಈ ಯೋಜನೆಯನ್ನು ಬಳಸುವ ಮೊದಲು ಇವುಗಳನ್ನು ನಿಮ್ಮ ಪ್ರದೇಶದ ನೈಜ ಪೂರೈಕೆದಾರರು, ವಿತರಕರು ಮತ್ತು ಚಿಲ್ಲರೆ ವ್ಯಾಪಾರಿಗಳೊಂದಿಗೆ ಬದಲಾಯಿಸಿ.',
+    'contacts.roleRawMaterial': 'ಕಚ್ಚಾ ವಸ್ತು ಪೂರೈಕೆದಾರ',
+    'contacts.roleDistributor': 'ವಿತರಕ / ಸಂಗ್ರಹ ಕೇಂದ್ರ',
+    'contacts.roleRetailer': 'ಚಿಲ್ಲರೆ ವ್ಯಾಪಾರಿ / ಸ್ಥಳೀಯ ಅಂಗಡಿ',
+    'contacts.roleClient': 'ಸಂಭಾವ್ಯ ಬೃಹತ್ ಗ್ರಾಹಕ',
+    'contacts.callLabel': 'ಕರೆ ಮಾಡಿ',
+
     'form.languageLabel': 'ಯಾವ ಭಾಷೆಯಲ್ಲಿ ಉತ್ತರ ಬೇಕು? / Answer in which language?',
     'form.businessNameLabel': 'ಈ ವ್ಯಾಪಾರ ಯೋಜನೆಗೆ ಹೆಸರಿಡಿ',
     'form.businessNamePlaceholder': 'ಉದಾ. ಮೀನಾ ಡೈರಿ',
@@ -702,6 +732,16 @@ export const STRINGS = {
     'report.generatingPdf': 'PDF సిద్ధం చేస్తోంది...',
     'report.downloadPdf': '📄 PDF నివేదికను డౌన్‌లోడ్ చేయండి',
     'report.pdfFailed': 'PDF డౌన్‌లోడ్ విఫలమైంది. దయచేసి మళ్లీ ప్రయత్నించండి.',
+
+    // LocalContactsCard
+    'contacts.title': 'ప్రారంభించడానికి స్థానిక సంప్రదింపులు',
+    'contacts.subtitle': 'ఈ వ్యాపారాన్ని ప్రారంభించేటప్పుడు లేదా నడుపుతున్నప్పుడు మీరు కాల్ చేయాల్సిన వ్యక్తులు — ముడి పదార్థాలు, పంపిణీ, రిటైల్ మరియు పెద్ద మొత్తంలో ఆర్డర్ల కోసం.',
+    'contacts.disclaimer': 'ఇవి కేవలం ప్రదర్శన కోసం మాత్రమే నమూనా సంప్రదింపులు. ఈ ప్రణాళికను ఉపయోగించే ముందు వీటిని మీ ప్రాంతంలోని నిజమైన సరఫరాదారులు, పంపిణీదారులు మరియు రిటైలర్లతో భర్తీ చేయండి.',
+    'contacts.roleRawMaterial': 'ముడి పదార్థాల సరఫరాదారు',
+    'contacts.roleDistributor': 'పంపిణీదారు / సేకరణ కేంద్రం',
+    'contacts.roleRetailer': 'రిటైలర్ / స్థానిక దుకాణం',
+    'contacts.roleClient': 'సంభావ్య పెద్ద కొనుగోలుదారు',
+    'contacts.callLabel': 'కాల్ చేయండి',
 
     'form.languageLabel': 'ఏ భాషలో సమాధానం కావాలి? / Answer in which language?',
     'form.businessNameLabel': 'ఈ వ్యాపార ప్రణాళికకు పేరు పెట్టండి',

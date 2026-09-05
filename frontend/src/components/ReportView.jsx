@@ -5,6 +5,7 @@ import FeasibilityCard from './FeasibilityCard.jsx'
 import FinancialPlanCard from './FinancialPlanCard.jsx'
 import RevenueProjectionCard from './RevenueProjectionCard.jsx'
 import FlowchartView from './FlowchartView.jsx'
+import LocalContactsCard from './LocalContactsCard.jsx'
 import { t } from '../i18n.js'
 
 /**
@@ -12,7 +13,7 @@ import { t } from '../i18n.js'
  * (open or personal use) and by the History detail view when replaying a
  * saved report, so both stay visually identical.
  */
-export default function ReportView({ response, language = 'en', fileLabel = 'GramVyapaar_Report' }) {
+export default function ReportView({ response, language = 'en', fileLabel = 'GramVyapaar_Report', businessCategory }) {
   const reportRef = useRef(null)
   const [isDownloading, setIsDownloading] = useState(false)
 
@@ -55,6 +56,7 @@ export default function ReportView({ response, language = 'en', fileLabel = 'Gra
         <RevenueProjectionCard projection={response.feasibility_report.revenue_projection} language={language} />
         <FlowchartView steps={response.feasibility_report.journey_flowchart} language={language} />
         <FinancialPlanCard plan={response.financial_plan} language={language} />
+        <LocalContactsCard category={businessCategory} language={language} />
         <div className="disclaimer" style={{ marginTop: 24 }}>
           {response.disclaimer}
         </div>

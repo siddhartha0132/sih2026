@@ -107,6 +107,7 @@ export default function Advisor({ mode }) {
             response={result}
             language={lang}
             fileLabel={`GramVyapaar_Report_${form.district}_${form.business_category}`}
+            businessCategory={form.business_category === 'Other' ? form.business_category_other : form.business_category}
           />
         </div>
       )}
