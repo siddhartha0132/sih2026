@@ -77,7 +77,7 @@ export default function Advisor({ mode }) {
           : t(lang, 'advisor.openNote')}
       </p>
 
-      <div style={{ maxWidth: 640, marginTop: 24 }}>
+      <div style={{ maxWidth: 760, marginTop: 24, marginLeft: 'auto', marginRight: 'auto' }}>
         <InputForm
           form={form}
           setForm={setForm}
@@ -88,7 +88,7 @@ export default function Advisor({ mode }) {
       </div>
 
       {error && (
-        <div className="error-box" style={{ marginTop: 24, maxWidth: 640 }}>
+        <div className="error-box" style={{ marginTop: 24, maxWidth: 760, marginLeft: 'auto', marginRight: 'auto' }}>
           {error}
         </div>
       )}
