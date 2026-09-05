@@ -69,15 +69,17 @@ export default function Advisor({ mode }) {
   const lang = form.language
   return (
     <div className="container section">
-      <h1>{isPersonal ? t(lang, 'advisor.titlePersonal') : t(lang, 'advisor.titleOpen')}</h1>
-      <p>
-        {t(lang, 'advisor.description')}
-        {isPersonal
-          ? t(lang, 'advisor.savedNote')
-          : t(lang, 'advisor.openNote')}
-      </p>
+      <div style={{ maxWidth: 900, marginLeft: 'auto', marginRight: 'auto', textAlign: 'center' }}>
+        <h1>{isPersonal ? t(lang, 'advisor.titlePersonal') : t(lang, 'advisor.titleOpen')}</h1>
+        <p>
+          {t(lang, 'advisor.description')}
+          {isPersonal
+            ? t(lang, 'advisor.savedNote')
+            : t(lang, 'advisor.openNote')}
+        </p>
+      </div>
 
-      <div style={{ maxWidth: 760, marginTop: 24, marginLeft: 'auto', marginRight: 'auto' }}>
+      <div style={{ maxWidth: 900, marginTop: 24, marginLeft: 'auto', marginRight: 'auto' }}>
         <InputForm
           form={form}
           setForm={setForm}
@@ -88,7 +90,7 @@ export default function Advisor({ mode }) {
       </div>
 
       {error && (
-        <div className="error-box" style={{ marginTop: 24, maxWidth: 760, marginLeft: 'auto', marginRight: 'auto' }}>
+        <div className="error-box" style={{ marginTop: 24, maxWidth: 900, marginLeft: 'auto', marginRight: 'auto' }}>
           {error}
         </div>
       )}
